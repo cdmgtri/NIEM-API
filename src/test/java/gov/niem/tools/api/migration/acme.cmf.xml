@@ -1,84 +1,84 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Model
-  xmlns:cmf="http://reference.niem.gov/specification/cmf/0.6/"
-  xmlns:structures="http://release.niem.gov/niem/structures/5.0/"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://reference.niem.gov/specification/cmf/0.6/">
+  xmlns="https://docs.oasis-open.org/niemopen/ns/specification/cmf/0.8/"
+  xmlns:cmf="https://docs.oasis-open.org/niemopen/ns/specification/cmf/0.8/"
+  xmlns:structures="https://docs.oasis-open.org/niemopen/ns/model/structures/6.0/"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Namespace structures:id="biom">
     <NamespaceURI>http://release.niem.gov/niem/domains/biometrics/3.0/</NamespaceURI>
-    <NamespacePrefixName>biom</NamespacePrefixName>
+    <NamespacePrefixText>biom</NamespacePrefixText>
     <DefinitionText>Biometric Schema Version 1.0</DefinitionText>
     <NamespaceKindCode>DOMAIN</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="cyfs">
     <NamespaceURI>http://release.niem.gov/niem/domains/cyfs/3.0/</NamespaceURI>
-    <NamespacePrefixName>cyfs</NamespacePrefixName>
+    <NamespacePrefixText>cyfs</NamespacePrefixText>
     <DefinitionText>Children, Youth, and Family Services</DefinitionText>
     <NamespaceKindCode>DOMAIN</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="fips_10-4">
     <NamespaceURI>http://release.niem.gov/niem/codes/fips_10-4/3.0/</NamespaceURI>
-    <NamespacePrefixName>fips_10-4</NamespacePrefixName>
+    <NamespacePrefixText>fips_10-4</NamespacePrefixText>
     <DefinitionText>Countries, dependencies, areas of special sovereignty, and their principal administrative divisions.\nSource:  National Geospatial-Intelligence Agency (NGA); \nPublication: Geopolitical Entities and Codes (formerly FIPS 10-4); \nDate: Apr 2010; \nSource Updates: 14+;  \nhttp://earth-info.nga.mil/gns/html/GEOPOLITICAL_CODES.pdf</DefinitionText>
     <NamespaceKindCode>OTHERNIEM</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="iso_3166">
     <NamespaceURI>http://release.niem.gov/niem/codes/iso_3166-1/3.0/</NamespaceURI>
-    <NamespacePrefixName>iso_3166</NamespacePrefixName>
+    <NamespacePrefixText>iso_3166</NamespacePrefixText>
     <DefinitionText>Source: International Standards Organization (ISO); \nPublication: Codes for the representation of names of countries -- Part 1: Country codes; \nDate: 2 Aug 2012; \nSource Updates: VI-13; \nhttp://www.iso.org/iso/country_codes.htm</DefinitionText>
     <NamespaceKindCode>OTHERNIEM</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="it">
     <NamespaceURI>http://release.niem.gov/niem/domains/internationalTrade/3.0/</NamespaceURI>
-    <NamespacePrefixName>it</NamespacePrefixName>
+    <NamespacePrefixText>it</NamespacePrefixText>
     <DefinitionText>International Trade</DefinitionText>
     <NamespaceKindCode>DOMAIN</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="j">
     <NamespaceURI>http://release.niem.gov/niem/domains/jxdm/5.0/</NamespaceURI>
-    <NamespacePrefixName>j</NamespacePrefixName>
+    <NamespacePrefixText>j</NamespacePrefixText>
     <DefinitionText>Justice</DefinitionText>
     <NamespaceKindCode>DOMAIN</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="jc3iedm">
     <NamespaceURI>http://publication.niem.gov/niem/codes/jc3iedm/3.0/1/</NamespaceURI>
-    <NamespacePrefixName>jc3iedm</NamespacePrefixName>
+    <NamespacePrefixText>jc3iedm</NamespacePrefixText>
     <DefinitionText>Codes from JC3IEDM</DefinitionText>
     <NamespaceKindCode>OTHERNIEM</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="mmucc">
     <NamespaceURI>http://release.niem.gov/niem/codes/mmucc/3.0/</NamespaceURI>
-    <NamespacePrefixName>mmucc</NamespacePrefixName>
+    <NamespacePrefixText>mmucc</NamespacePrefixText>
     <DefinitionText>Source: Model Minimum Uniform Crash Criteria (MMUCC); Publication: MMUCC Guideline - Model Minimum Uniform Crash Criteria - 3rd Edition; \nVersion: 3.0; \nDate: 2012; \nSource Updates: 31 Oct 2006;</DefinitionText>
     <NamespaceKindCode>OTHERNIEM</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="mo">
     <NamespaceURI>http://publication.niem.gov/niem/domains/militaryOperations/3.0/1/</NamespaceURI>
-    <NamespacePrefixName>mo</NamespacePrefixName>
+    <NamespacePrefixText>mo</NamespacePrefixText>
     <DefinitionText>MilOps 1.0 - Distribution A</DefinitionText>
     <NamespaceKindCode>DOMAIN</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="nc">
     <NamespaceURI>http://release.niem.gov/niem/niem-core/3.0/</NamespaceURI>
-    <NamespacePrefixName>nc</NamespacePrefixName>
+    <NamespacePrefixText>nc</NamespacePrefixText>
     <DefinitionText>NIEM Core.</DefinitionText>
     <NamespaceKindCode>CORE</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="ncic">
     <NamespaceURI>http://release.niem.gov/niem/codes/fbi_ncic/3.0/</NamespaceURI>
-    <NamespacePrefixName>ncic</NamespacePrefixName>
+    <NamespacePrefixText>ncic</NamespacePrefixText>
     <DefinitionText>FBI code lists for the National Crime and Information Center (NCIC-2000).\nSource: FBI Crminal Justice Information Systems (CJIS) Division; \nPublication: leo.gov database; \nhttps://www.leo.gov</DefinitionText>
     <NamespaceKindCode>OTHERNIEM</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="ndex">
     <NamespaceURI>http://release.niem.gov/niem/codes/fbi_ndex/3.0/</NamespaceURI>
-    <NamespacePrefixName>ndex</NamespacePrefixName>
+    <NamespacePrefixText>ndex</NamespacePrefixText>
     <DefinitionText>Source: FBI Crminal Justice Information Systems (CJIS) Division; \nPublication: National Data Exchange (N-Dex) Specification (a NIEM IEPD); \nVersion: 2.2; \nDate: 2013; \nhttp://www.it.ojp.gov/framesets/iepd-clearinghouse-noClose.htm</DefinitionText>
     <NamespaceKindCode>OTHERNIEM</NamespaceKindCode>
   </Namespace>
   <Namespace structures:id="xs">
     <NamespaceURI>http://www.w3.org/2001/XMLSchema</NamespaceURI>
-    <NamespacePrefixName>xs</NamespacePrefixName>
+    <NamespacePrefixText>xs</NamespacePrefixText>
     <NamespaceKindCode>XSD</NamespaceKindCode>
   </Namespace>
   <Property structures:id="biom.Biometric">

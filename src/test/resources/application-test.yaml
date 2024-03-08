@@ -1,0 +1,17 @@
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/niem-api-v2?currentSchema=test
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        default_schema: test
+      jakarta:
+        persistence:
+          schema-generation:
+            # create-source: metadata
+            scripts:
+              # action: create
+              create-target: schema-test.sql

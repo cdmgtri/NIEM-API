@@ -31,11 +31,28 @@ public class Config {
 
   public static String baseUrl;
 
-  public static String draft;
+  public static String draft = "PENDING_BUILD";
 
-  public Config(@Value("${app.baseUrl}") String baseUrl, @Value("${app.draft}") String draft) {
+  public static String cmfVersion;
+
+  public static String cmfUri;
+
+  public static String cmftoolVersion;
+
+  public Config(
+      @Value("${app.baseUrl}") String baseUrl,
+      @Value("${app.draft}") String draft,
+      @Value("${app.cmf.version}") String cmfVersion,
+      @Value("${app.cmf.uri}") String cmfUri,
+      @Value("${app.cmftool.version}") String cmftoolVersion
+    ) {
+
     Config.baseUrl = baseUrl;
     Config.draft = draft;
+    Config.cmfVersion = cmfVersion;
+    Config.cmfUri = cmfUri;
+    Config.cmftoolVersion = cmftoolVersion;
+
   }
 
   public enum AppMediaType {
@@ -59,7 +76,9 @@ public class Config {
             .ignoreAcceptHeader(true)
             .defaultContentType(MediaType.APPLICATION_JSON)
             .mediaType("xml", MediaType.APPLICATION_XML)
-            .mediaType("json", MediaType.APPLICATION_JSON);      }
+            .mediaType("json", MediaType.APPLICATION_JSON)
+            .mediaType("text", MediaType.TEXT_PLAIN);
+      }
     };
   }
 

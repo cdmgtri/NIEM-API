@@ -3,23 +3,39 @@ package gov.niem.tools.api.transform;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import org.mitre.niem.cmf.Component;
+import org.mitre.niem.cmf.Datatype;
 import org.mitre.niem.cmf.Model;
+import org.mitre.niem.cmf.Namespace;
+import org.mitre.niem.cmf.Property;
+import org.mitre.niem.cmf.SchemaDocument;
 import org.mitre.niem.json.ModelToJSON;
 import org.mitre.niem.rdf.ModelToOWL;
 import org.mitre.niem.xsd.ModelFromXSD;
+import org.mitre.niem.xsd.ModelToN5XSD;
+import org.mitre.niem.xsd.ModelToSrcXSD;
 import org.mitre.niem.xsd.ModelToXSD;
 import org.mitre.niem.xsd.ModelXMLReader;
-import org.mitre.niem.xsd.ModelXMLWriter;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import gov.niem.tools.api.core.config.Config;
 import gov.niem.tools.api.core.exceptions.BadRequestException;
+import gov.niem.tools.api.core.utils.CmfUtils;
 import gov.niem.tools.api.core.utils.FileUtils;
 import gov.niem.tools.api.core.utils.ZipUtils;
 import lombok.extern.log4j.Log4j2;
@@ -148,6 +164,13 @@ public class TransformService {
         break;
 
       case cmf:
+
+        // Check that the CMF file has the right version
+        String cmfText = FileUtils.getFileText(inputFile);
+        if (!cmfText.contains(Config.cmfUri)) {
+          throw new BadRequestException(String.format("Only CMF version %s is supported.", Config.cmfVersion));
+        }
+
         // Read a given CMF file and load into a new CMF model.
         FileInputStream inputStream = new FileInputStream(inputFile.toFile());
         ModelXMLReader modelReader = new ModelXMLReader();
@@ -174,59 +197,350 @@ public class TransformService {
    * Second pass of transformation. Convert the input file from the given
    * `from` format to the given `to` format.
    */
-  public byte[] generateOutput(Model cmf, TransformTo to, String filenameBase) throws Exception {
+  public byte[] generateOutput(Model model, TransformTo to, String filenameBase) throws Exception {
 
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter(stringWriter);
+    String results = null;
+
+    switch (to) {
+      case cmf:
+        results = CmfUtils.generateString(model);
+        results = fixCmfOutput(results);
+        break;
+
+      case owl:
+        ModelToOWL m2o = new ModelToOWL(model);
+        m2o.writeRDF(printWriter);
+        results = stringWriter.toString();
+        results = fixOwlOutput(results);
+        break;
+
+      case xsd:
+        // Return a zip file
+        printWriter.close();
+        stringWriter.close();
+        return generateXsdOutput(model, filenameBase);
+
+      case json_schema:
+        ModelToJSON modelToJSON = new ModelToJSON(model);
+        modelToJSON.writeJSON(printWriter);
+        results = stringWriter.toString();
+        break;
+    }
+
+    printWriter.flush();
+    printWriter.close();
+
+    stringWriter.flush();
+    stringWriter.close();
+
+    return results.getBytes();
+
+  }
+
+  /**
+   * Second pass of transformation for XSD output. Generate XML Schema files
+   * from a CMF model and zip the results.
+   */
+  public byte[] generateXsdOutput(Model model, String filenameBase) throws Exception {
+
+    // Create a temp directory for the results. Dir name includes a unique ID num.
     Path tempDir = FileUtils.createTempDir("transform-output");
 
-    String outputFilePathString = tempDir.toString() + "/" + this.getOutputFilename(to, filenameBase);
+    // Create a new subdirectory with a clean name (the model input file name)
+    Path xsdDir = FileUtils.createDir(FileUtils.path(tempDir.toString() + "/" + filenameBase));
 
-    File outputFile = FileUtils.file(outputFilePathString);
+    // Set up a NIEM 3.0 - 5.2 model writer or a NIEM 6.0+ model writer
+    String niem6UriBase = "https://docs.oasis-open.org/niemopen/ns/model";
 
-    // Handle multiple schemas and the zip file separately
-    if (to.equals(TransformTo.xsd)) {
+    Boolean isNiem6 = model.getNamespaceList().stream()
+    .filter(namespace -> namespace.getNamespaceURI().contains(niem6UriBase))
+    .findAny()
+    .isPresent();
 
-      Path xsdDir = FileUtils.createDir(FileUtils.path(tempDir.toString() + "/" + filenameBase));
-      ModelToXSD modelToXSD = new ModelToXSD(cmf);
-      modelToXSD.writeXSD(xsdDir.toFile());
-      ZipUtils.zip(xsdDir.toFile(), outputFilePathString);
+    ModelToXSD modelToXSD = isNiem6 ? new ModelToSrcXSD(model) : new ModelToN5XSD(model);
 
-    }
-    else {
+    // Transform the CMF file to XSDs and write to the new directory above
+    modelToXSD.writeXSD(xsdDir.toFile());
 
-      PrintWriter writer = new PrintWriter(outputFile);
+    // Fix the transform output
+    fixXsdOutput(model, xsdDir);
 
-      switch (to) {
-        case cmf:
-          ModelXMLWriter cmfWriter = new ModelXMLWriter();
-          cmfWriter.writeXML(cmf, writer);
-          break;
+    // Zip the XSD directory to a new zip file under the temp directory
+    String zipFilePathString = String.format("%s/%s.zip", tempDir.toString(), filenameBase);
+    File zipFile = FileUtils.file(zipFilePathString);
+    ZipUtils.zip(xsdDir.toFile(), zipFilePathString);
 
-        case owl:
-          ModelToOWL m2o = new ModelToOWL(cmf);
-          m2o.writeRDF(writer);
-          break;
-
-        case xsd:
-          break;
-
-        case json_schema:
-          ModelToJSON modelToJSON = new ModelToJSON(cmf);
-          modelToJSON.writeJSON(writer);
-          break;
-
-        default:
-          writer.close();
-          throw new Exception();
-      }
-
-      writer.close();
-
-    }
-
-    byte[] bytes = Files.readAllBytes(outputFile.toPath());
+    // Convert the zip file to bytes and delete the temp directory
+    byte[] bytes = Files.readAllBytes(zipFile.toPath());
     FileUtils.deleteTempDir(tempDir);
 
     return bytes;
+
+  }
+
+  /**
+   * Fix errors in the XSD output transform
+   *
+   * @todo Get fix for CMF tool XSD output
+   */
+  private void fixXsdOutput(Model model, Path xsdDir) throws Exception {
+
+    // Get paths to all of the XSDs
+    List<Path> xsdPaths = FileUtils.getFilePathsFromDirWithExtension(xsdDir, "xsd");
+
+    List<Property> properties = model.getComponentList()
+      .stream()
+      .filter(component -> component.asProperty() != null)
+      .map(component -> component.asProperty())
+      .collect(Collectors.toList());
+
+    for (Path xsdPath : xsdPaths) {
+      String xsd = FileUtils.getFileText(xsdPath);
+
+      if (!xsd.contains("ct:conformanceTargets")) {
+        // Skip files not generated by the CMF tool
+        continue;
+      }
+
+      // Remove the errant closing tag on the xs:schema element (attributes will follow)
+      xsd = xsd.replaceFirst("<xs:schema>", "<xs:schema");
+
+      // Remove the errant closing tag on the xs:import elements
+      xsd = xsd.replace("<xs:import>", "<xs:import");
+
+      // Add the uri to xs:import elements
+      xsd = fixXsdImports(model, xsd);
+
+      // Remove the errant closing tag on element refs in a sequence
+      xsd = xsd.replace("<xs:element>", "<xs:element ");
+
+      // Add names to elements with substitution groups
+      xsd = fixXsdElements(model, xsd, properties);
+
+      // Add the conformance targets namespace prefix declaration if needed
+      String conformanceTargetsUri = "http://release.niem.gov/niem/conformanceTargets/3.0/";
+      xsd = fixXsdAddPrefix(xsd, "ct", conformanceTargetsUri);
+
+      // Qualify the xml:lang attribute if needed
+      xsd = xsd.replace(" lang=", " xml:lang=");
+
+      // Add the xml:lang attribute if missing
+      if (!xsd.contains("xml:lang")) {
+        String xmlLang = " ".repeat(11) + "xml:lang=\"en-US\"";
+        xsd = xsd.replace("<xs:schema", "<xs:schema\n" + xmlLang);
+      }
+
+      // Change the conformance target of reference subset schemas
+      xsd = xsd.replace("/#ReferenceSchemaDocument", "/#ExtensionSchemaDocument");
+
+      FileUtils.saveFile(xsdPath, xsd.getBytes());
+    }
+
+  }
+
+  private String fixXsdImports(Model model, String xsd) {
+
+    String oldImportText = "   <xs:import\n" + " ".repeat(14) + "schemaLocation=\"(.*)\"/>";
+    Pattern pattern = Pattern.compile(oldImportText);
+    Matcher matcher = pattern.matcher(xsd);
+
+    Map<String, SchemaDocument> schemaDocuments = model.schemadoc();
+
+    while (matcher.find()) {
+      // Get the filename from the import
+      String relativePath = matcher.group(1);
+      int index = relativePath.lastIndexOf("/");
+      String filename = relativePath.substring(index + 1);
+
+      // Get the uri from the model based on the file name
+      String uri = null;
+      for (SchemaDocument schemaDocument : schemaDocuments.values()) {
+        if (schemaDocument.filePath().contains(filename)) {
+          // Update the XSD
+          uri = schemaDocument.targetNS();
+          String newImportText = String.format("   <xs:import namespace=\"%s\" schemaLocation=\"%s\"/>", uri, relativePath);
+          xsd = xsd.replaceFirst(oldImportText, newImportText);
+          matcher = pattern.matcher(xsd);
+          break;
+        }
+      }
+    }
+
+    return xsd;
+
+  }
+
+  /**
+   * Fix element declarations without names.
+   */
+  private String fixXsdElements(Model model, String xsd, List<Property> properties) {
+
+    String[] patternFields = {
+      "<xs:element",
+      "(?:nillable=\".*\")?",
+      "(?:substitutionGroup=\"(.*)\")?",
+      "type=\"(.*)\">",
+      "<xs:annotation>",
+      "<xs:documentation>(.*)</xs:documentation"
+    };
+
+    Pattern pattern = Pattern.compile(String.join("\\s*", patternFields));
+    Matcher matcher = pattern.matcher(xsd);
+
+    Set<Namespace> namespaces = new HashSet<>();
+
+    xsd = matcher.replaceAll(m -> fixXsdElement(model, properties, m, namespaces));
+
+    for (Namespace namespace : namespaces) {
+      // Fix any missing namespace prefix declarations
+      xsd = fixXsdAddPrefix(xsd, namespace.getNamespacePrefix(), namespace.getNamespaceURI());
+    }
+
+    return xsd;
+  }
+
+  private String fixXsdElement(Model model, List<Property> properties, MatchResult matchResult, Set<Namespace> namespaces) {
+
+    String substitutionGroupQname = matchResult.group(1);
+    String typeQname = matchResult.group(2);
+    String definition = matchResult.group(3);
+
+    String oldText = matchResult.group();
+
+    Property property = getProperty(properties, substitutionGroupQname, typeQname, definition);
+
+    if (property != null) {
+      String newText = oldText.replace("<xs:element", String.format("<xs:element name=\"%s\"", property.getName()));
+      addDependencyNamespaces(property, namespaces);
+      return newText;
+    }
+
+    return oldText;
+  }
+
+  private void addDependencyNamespaces(Property property, Set<Namespace> namespaces) {
+    addDependencyNamespace(property.getClassType(), namespaces);
+    addDependencyNamespace(property.getDatatype(), namespaces);
+    addDependencyNamespace(property.getSubPropertyOf(), namespaces);
+  }
+
+  private void addDependencyNamespace(Component component, Set<Namespace> namespaces) {
+    if (component != null) {
+      namespaces.add(component.getNamespace());
+    }
+  }
+
+
+  private Property getProperty(List<Property> properties, String substitutionGroupQname, String typeQname, String definition) {
+    return properties.stream()
+        .filter( property -> {
+          // Check if definition matches (both same value or both null)
+          if (!equalOrNull(property.getDefinition(), definition)) {
+            return false;
+          }
+
+          // Check if substitution group matches (both same qname or both null)
+          String actualSubstitutionGroupQName = property.getSubPropertyOf() == null ? null : property.getSubPropertyOf().getQName();
+
+          if (!equalOrNull(actualSubstitutionGroupQName, substitutionGroupQname)) {
+            return false;
+          }
+
+          String actualTypeQname = property.getClassType() == null ? null : property.getClassType().getQName();
+
+          boolean hasDatatype = false;
+
+          if (actualTypeQname == null && property.getDatatype() != null) {
+            actualTypeQname = property.getDatatype().getQName();
+            hasDatatype = true;
+          }
+
+          if (equalOrNull(actualTypeQname, typeQname)) {
+            return true;
+          }
+
+          // Check in case the CMF tool converted a proxy xs type to a simple xs type
+          if (hasDatatype == true) {
+            Datatype datatype = property.getDatatype();
+            String typeName = typeQname.substring(typeQname.indexOf(":") + 1);
+            if (datatype.getName().equals(typeName) && datatype.getQName().contains("xs") && typeQname.contains("xs")) {
+              return true;
+            }
+          }
+
+          return false;
+        })
+        .findFirst()
+        .orElse(null);
+
+  }
+
+  /**
+   * Returns true if both strings are equal or if both strings are null.
+   */
+  private boolean equalOrNull(String value1, String value2) {
+    if (value1 == null) {
+      return value2 == null;
+    }
+    return value1.equals(value2);
+  }
+
+  /**
+   * Adds the namespace prefix declaration to the XSD string if it doesn't
+   * already exist.
+   */
+  private String fixXsdAddPrefix(String xsd, String prefix, String uri) {
+    String xmlnsPrefix = "xmlns:" + prefix;
+    if (!xsd.contains(xmlnsPrefix)) {
+      String schemaTag = "<xs:schema\n";
+      String prefixSpaces = " ".repeat(11);
+      String declaration = String.format("%s=\"%s\"\n", xmlnsPrefix, uri);
+
+      xsd = xsd.replace(schemaTag, String.format("%s%s%s", schemaTag, prefixSpaces, declaration));
+    }
+    return xsd;
+  }
+
+  /**
+   * Fix errors and irregular formatting in the CMF output transform.
+   *
+   * @todo Get fix for CMF tool CMF output
+   */
+  private String fixCmfOutput(String cmfString) {
+
+    // 1. Replace errant closing tag in CMF output after default xmlns declaration
+    final String BAD_TEXT = "xmlns=\"https://docs.oasis-open.org/niemopen/ns/specification/cmf/0.8/\">\n";
+
+    final String GOOD_TEXT = "xmlns=\"https://docs.oasis-open.org/niemopen/ns/specification/cmf/0.8/\"\n";
+
+    cmfString = cmfString.replace(BAD_TEXT, GOOD_TEXT);
+
+    // 2. Replace extra spaces before xmlns prefix declarations
+    cmfString = cmfString.replaceAll("       xmlns", "  xmlns");
+
+    // 3. Replace extra space after model opening element
+    cmfString = cmfString.replace("<Model \n", "<Model\n");
+
+    return cmfString;
+
+  }
+
+  /**
+   * Fix errors and irregular formatting in the OWL output transform.
+   *
+   * @todo Get fix for CMF tool RDF output
+   */
+  private String fixOwlOutput(String owlString) {
+
+    // 1. Standardize irregular lines in OWL export
+    owlString = owlString.replaceAll("\r\n", "\n").replaceAll("\n\n\n", "\n\n");
+
+    // 2. Replace double ## in URIs with single #
+    owlString = owlString.replaceAll("##", "#");
+
+    return owlString;
 
   }
 

@@ -137,7 +137,7 @@ public class XmlValidationServiceTest {
     File xmlFile = FileUtils.file(curDir + "input/single/person.xml");
     File xsdFile = FileUtils.file(curDir + "input/single/person-invalid.xsd");
 
-    gov.niem.tools.api.validation.Test[] tests = this.testXmlValidation(xmlFile, xsdFile, 3, 1);
+    this.testXmlValidation(xmlFile, xsdFile, 3, 1);
 
   }
 

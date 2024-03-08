@@ -11,8 +11,8 @@ servers:
   description: Local machine
 - url: https://tools.niem.gov/api/v2
   description: Production server
-- url: https://yellowkiwi06.icl.gtri.org/
-  description: Internal test server
+- url: https://tools.niem.gov/api/mep
+  description: MEP Builder instance on production server
 security:
   - name:
     - bearerAuthentication

@@ -6,14 +6,10 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
 
 import gov.niem.tools.api.search.SearchService;
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 @Configuration
 public class HibernateSearchIndexBuild implements ApplicationListener < ApplicationReadyEvent > {
-
-  @Autowired
-  private EntityManager em;
 
   @Autowired
   SearchService searchService;

@@ -24,7 +24,6 @@ import gov.niem.tools.api.db.ServiceHub;
 import gov.niem.tools.api.db.component.Component;
 import gov.niem.tools.api.db.exceptions.EntityNotFoundException;
 import gov.niem.tools.api.db.facet.Facet;
-import gov.niem.tools.api.db.model.Model;
 import gov.niem.tools.api.db.namespace.Namespace;
 import gov.niem.tools.api.db.property.Property;
 import gov.niem.tools.api.db.subproperty.Subproperty;
@@ -37,9 +36,6 @@ import gov.niem.tools.api.validation.Test.Severity;
 import gov.niem.tools.api.validation.TestResult.Status;
 import jakarta.persistence.EntityManager;
 import lombok.extern.log4j.Log4j2;
-
-// Note: Ignore the "Component is a raw type" warnings below.
-// It is not necessary in these cases to indicate whether these are properties or types
 
 /**
  * Migrate a CMF model from one version to any subsequent version.
@@ -315,8 +311,8 @@ public class MigrationService {
     String oldMax = CmfUtils.subpropertyMax(oldHasProperty);
 
     // Convert the type to an augmentation type if applicable from the CMF
-    if (!oldHasProperty.augmentTypeNS().isEmpty()) {
-      oldPrefix = oldHasProperty.augmentTypeNS().iterator().next().getNamespacePrefix();
+    if (!oldHasProperty.augmentingNS().isEmpty()) {
+      oldPrefix = oldHasProperty.augmentingNS().iterator().next().getNamespacePrefix();
       oldTypeQname = oldPrefix + ":" + StringUtils.removeEnd(oldType.getName(), "Type") + "AugmentationType";
     }
 
@@ -410,11 +406,12 @@ public class MigrationService {
    * @param originalComponent The old component that was converted or had the dependency, or null to skip the log
    * @param isMigration True if result of migration; false if result of dependency
    */
+  @SuppressWarnings("rawtypes")
   private void addComponentToCmf(Component newComponent, org.mitre.niem.cmf.Model cmf, Test test, Component originalComponent, Boolean isMigration) throws Exception {
 
     // TODO:
     if (newComponent.getName().equals("CountryCodeSimpleType")) {
-      String s = "s";
+      // String s = "s";
     }
 
     // Try to find the component in the current CMF model
@@ -533,7 +530,7 @@ public class MigrationService {
     String filenameBase = FileUtils.getFilenameBase(file);
 
     // Save CMF file as filename-migrated-to-#.cmf.xml
-    String cmfFilenameBase = String.format("%s-migrated-to-%s", filenameBase, to);
+    String cmfFilenameBase = String.format("%s-%s", filenameBase, to);
     File cmfFile = CmfUtils.saveCmfModel(cmf, tempDir, cmfFilenameBase);
 
     // Save migration report as filename-migration-report-#-to-#.json
@@ -597,6 +594,7 @@ public class MigrationService {
     test.results.add(result);
   }
 
+  @SuppressWarnings("rawtypes")
   private void logDependency(Test test, Boolean passed, Component dependency, Component source) {
     this.logResult(test, DEPENDENCY, dependency.getPrefix(), dependency.getQname(), dependency.getClassName(), passed, "Added as dependency of " + source.getQname());
   }
@@ -604,6 +602,7 @@ public class MigrationService {
   /**
    * Log test result to the test passes or test issues list.
    */
+  @SuppressWarnings("rawtypes")
   private void logResult(Test test, String message, Component component, Boolean passed, Component oldComponent) {
 
     // Add a comment if the component was renamed
@@ -640,6 +639,7 @@ public class MigrationService {
    * @param test
    * @param label - Qualified name or other label of the entity if it could not be found
    */
+  @SuppressWarnings("rawtypes")
   private boolean hasMigration(Component component, Test test, String label, String className) {
 
     // Check that the component exists

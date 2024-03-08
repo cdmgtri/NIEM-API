@@ -4,5 +4,5 @@ public enum TransformTo {
   cmf,
   owl,
   xsd,
-  json_schema
+  json_schema;
 };

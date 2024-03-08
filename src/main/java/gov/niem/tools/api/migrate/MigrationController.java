@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +15,9 @@ import org.springframework.web.multipart.MultipartFile;
 import gov.niem.tools.api.core.utils.AppUtils;
 import gov.niem.tools.api.core.utils.FileUtils;
 import gov.niem.tools.api.core.utils.ResponseUtils;
+import gov.niem.tools.api.db.model.Model;
+import gov.niem.tools.api.db.steward.Steward;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,13 +31,23 @@ public class MigrationController {
   MigrationService migrationService;
 
   /**
-   * Migrate NIEM subset content in a CMF file to a newer version of NIEM.
+   * Migrate a version of a supported model in a CMF file to a newer version.
    *
-   * @param from The version of the NIEM model represented in the CMF file.
-   * @param to The more recent version of NIEM to which the CMF file should be migrated.
-   * @param file A CMF file containing NIEM properties and types to be migrated.
-   * @param stewardKey Steward identifier.  If not provided, defaults to the NIEM steward identifier.
-   * @param modelKey Model identifier.  If not provided, defaults to the NIEM data model identifier.
+   * Note: Only models stored via the NIEM API and that have migration rules are supported.
+   *
+   * @param from [REQUEST BODY PARAMETER]
+   * The version of the data model represented in the CMF file.
+   *
+   * @param to [REQUEST BODY PARAMETER]
+   * A more recent version of the data model to which the CMF file should be migrated.
+   *
+   * @param file A CMF file containing properties and types to be migrated.
+   *
+   * @param stewardKey [REQUEST BODY PARAMETER]
+   * A steward identifier. Defaults to the NIEM steward identifier to migrate a NIEM subset.
+   *
+   * @param modelKey [REQUEST BODY PARAMETER]
+   * A model identifier for the CMF file. Defaults to the NIEM data model to migrate a NIEM subset.
    *
    * @return Zip file with updated CMF file and a JSON file with issues encountered during the migration.
    */
@@ -43,12 +57,16 @@ public class MigrationController {
   @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
   @ApiResponse(responseCode = "500", description = "Error", content = @Content)
   public ResponseEntity<byte[]> migrateCMF(
-    @RequestParam String from,
-    @RequestParam String to,
-    @RequestParam MultipartFile file,
-    @RequestParam(required = false, defaultValue = "niem") String stewardKey,
-    @RequestParam(required = false, defaultValue = "model") String modelKey
+    @RequestParam(required = true) @Parameter(example = "3.1") String from,
+    @RequestParam(required = true) @Parameter(example = "5.2") String to,
+    @RequestPart(required = true) MultipartFile file,
+    @RequestParam(required = false) @Parameter(example = "niem") String stewardKey,
+    @RequestParam(required = false) @Parameter(example = "model") String modelKey
   ) throws Exception {
+
+    // Set default values if needed
+    stewardKey = stewardKey == null ? Steward.niemStewardKey : stewardKey;
+    modelKey = modelKey == null ? Model.niemModelKey : modelKey;
 
     // Get filename
     String filenameBase = FileUtils.getFilenameBase(file);

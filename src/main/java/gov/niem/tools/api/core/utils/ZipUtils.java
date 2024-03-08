@@ -13,8 +13,7 @@ public class ZipUtils {
 
   /**
    * Adds a file to the given zip file and return a byte array.
-   * @param sourceDir - Folder to be zipped
-   * @param zipFilePathString - Path for the new zip file
+   * @param files - List of files to be zipped
    * @throws ZipException
    */
   public static byte[] zip(List<File> files) throws Exception {
@@ -22,7 +21,7 @@ public class ZipUtils {
     File file = FileUtils.createTempFile("migration", ".zip");
     ZipFile zipFile = new ZipFile(file);
     zipFile.addFiles(files);
-    zipFile.close();;
+    zipFile.close();
 
     // Convert to bytes and delete the temp file
     byte[] bytes = Files.readAllBytes(zipFile.getFile().toPath());
@@ -44,8 +43,8 @@ public class ZipUtils {
 
   /**
    * Adds a file to the given zip file.
-   * @param sourceDir - Folder to be zipped
    * @param zipFilePathString - Path for the new zip file
+   * @param files - List of files to be zipped
    * @throws ZipException
    */
   public static ZipFile zip(String zipFilePathString, List<File> files) throws ZipException, IOException {

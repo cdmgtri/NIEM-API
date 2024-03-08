@@ -1,15 +1,15 @@
 plugins {
 	id 'java'
-  id "com.github.ben-manes.versions" version "0.46.0"
-  id "io.freefair.lombok" version "8.0.1"
-	id 'io.spring.dependency-management' version '1.1.0'
-  id 'org.springdoc.openapi-gradle-plugin' version '1.6.0'
+  id "com.github.ben-manes.versions" version "0.51.0"
+  id "io.freefair.lombok" version "8.6"
+	id 'io.spring.dependency-management' version '1.1.4'
+  id 'org.springdoc.openapi-gradle-plugin' version '1.8.0'
 	id 'org.springframework.boot' version '3.1.0'
 }
 
 group = 'gov.niem.tools'
 version = '2.0'
-project.ext.draft = '2.0-alpha6.2'
+project.ext.draft = '2.0-alpha06:SNAPSHOT'
 sourceCompatibility = '17'
 
 repositories {
@@ -17,25 +17,29 @@ repositories {
 }
 
 dependencies {
-  implementation fileTree(dir: 'libs/cmftool-0.6.1-SNAPSHOT/lib', include: '*.jar')
-  implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.1'
-  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.1'
-  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.15.1'
-  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.1'
-  implementation 'com.fasterxml.jackson:jackson-bom:2.15.1'
+  implementation fileTree(dir: 'libs/cmftool', include: '*.jar')
+  implementation 'com.fasterxml.jackson.core:jackson-core:2.16.1'
+  implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.16.1'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.16.1'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformats-text:2.16.1'
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.16.1'
+  implementation 'com.fasterxml.jackson:jackson-bom:2.16.1'
   implementation 'com.github.therapi:therapi-runtime-javadoc:0.15.0'
-  implementation 'commons-io:commons-io:2.12.0'
+  implementation 'commons-io:commons-io:2.15.1'
   implementation 'net.lingala.zip4j:zip4j:2.11.5'
-  implementation 'net.sf.saxon:Saxon-HE:12.3'
+  implementation 'net.sf.saxon:Saxon-HE:12.4'
   implementation 'org.apache.commons:commons-csv:1.10.0'
-  implementation 'org.hibernate.orm:hibernate-envers:6.2.3.Final'
+  implementation 'org.hibernate.orm:hibernate-envers:6.4.4.Final'
+  // implementation "org.hibernate:hibernate-envers-jakarta:5.6.15.Final"
   implementation 'org.hibernate.search:hibernate-search-mapper-orm-orm6:6.2.0.Alpha2'
   implementation 'org.hibernate.search:hibernate-search-backend-lucene:6.2.0.Alpha2'
-  implementation 'org.json:json:20230227'
-  implementation 'org.postgresql:postgresql:42.6.0'
-  // implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
-  // implementation 'org.springdoc:springdoc-openapi-javadoc:1.7.0'
-  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
+  // implementation 'org.hibernate.search:hibernate-search-mapper-orm-orm6:6.2.3.Final'
+  // implementation 'org.hibernate.search:hibernate-search-backend-lucene:6.2.3.Final'
+  implementation 'org.json:json:20240303'
+  implementation 'org.postgresql:postgresql:42.7.2'
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator:3.1.0'
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa:3.1.0'
   // implementation 'org.springframework.boot:spring-boot-starter-security:3.1.0'
   implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -48,6 +52,10 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
+compileJava {
+  options.compilerArgs << '-parameters'
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -56,16 +64,13 @@ configurations {
 
 configurations.all {
   resolutionStrategy {
-    failOnVersionConflict()
+    resolutionStrategy.force 'io.smallrye:jandex:3.1.2'
+    // failOnVersionConflict()
   }
 }
 
-compileJava {
-  options.compilerArgs << '-parameters'
-}
-
-tasks.named('test') {
-	useJUnitPlatform()
+javadoc {
+  options.tags = ["todo", "example"]
 }
 
 openApi {
@@ -77,4 +82,28 @@ processResources {
     // Make application version available to the code and open-api file
     expand(project.properties)
   }
+}
+
+task copyJavadocs(type: Copy) {
+  group = "documentation"
+  description = "Copy generated Javadoc to /docs/javadoc/"
+  println "Copying generated Javadoc to /docs/javadoc/"
+  from "build/docs/javadoc"
+  into "/docs/javadoc"
+}
+
+javadoc.finalizedBy copyJavadocs
+
+task copyOpenApi(type: Copy) {
+  group = "documentation"
+  description = "Copy the OpenAPI JSON file to /docs/"
+  println "Copying the OpenAPI JSON file to /docs/"
+  from "build/openapi.json"
+  into "/docs/"
+}
+
+generateOpenApiDocs.finalizedBy copyOpenApi
+
+tasks.named('test') {
+	useJUnitPlatform()
 }

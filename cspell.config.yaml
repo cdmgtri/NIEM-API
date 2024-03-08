@@ -14,25 +14,37 @@ words:
   - classpath
   - CLASSTYPE
   - CLIPPERTON
+  - clsa
   - CÔTE
   - CUNHA
   - D’IVOIRE
+  - databind
+  - dataformat
+  - dataformats
   - DATAPROPERTY
+  - datasource
   - datatypes
   - DHEKELIA
   - ESWATINI
   - EUSTATIUS
   - FASO
+  - fasterxml
   - fkey
+  - freefair
   - FUTUNA
   - GLORIOSO
+  - gradlew
+  - Hamcrest
   - Hmmss
   - HOWLAND
   - ISLAS
   - Jaxb
+  - jdbc
   - KINGMAN
   - KITTS
   - LESTE
+  - lingala
+  - logfile
   - Lucene
   - MAARTEN
   - MARINO
@@ -44,6 +56,7 @@ words:
   - PARACEL
   - plpgsql
   - projectable
+  - rawtypes
   - reindex
   - RICA
   - SPRATLY
@@ -51,9 +64,11 @@ words:
   - subproperties
   - Subproperty
   - svrl
+  - therapi
   - TOKELAU
   - TROMELIN
   - unaccent
+  - webmvc
   - whitespaces
   - wonka
 ignoreWords: []

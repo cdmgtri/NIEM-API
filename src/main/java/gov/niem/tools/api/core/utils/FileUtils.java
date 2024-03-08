@@ -90,7 +90,7 @@ public class FileUtils {
   /**
    * Returns the extension from the given filename.
    * Treats ".cmf.xml" as a double extension and returns both.
-   * @param filename - Filename with extension
+   * @param multipartFile - Uploaded input file
    * @return File extension
    */
   public static String getFileExtension(MultipartFile multipartFile){

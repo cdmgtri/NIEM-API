@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
+import gov.niem.tools.api.core.exceptions.BadRequestException;
 import gov.niem.tools.api.core.utils.FileUtils;
 import gov.niem.tools.api.core.utils.ZipUtils;
 import gov.niem.tools.api.validation.Test;
@@ -21,9 +23,7 @@ import gov.niem.tools.api.validation.TestResult;
 import gov.niem.tools.api.validation.TestResult.Status;
 import gov.niem.tools.api.validation.ValidationUtils;
 import gov.niem.tools.api.validation.xml.XmlValidationService;
-import lombok.extern.log4j.Log4j2;
 
-@Log4j2
 @Service
 public class NiemValidationService {
 
@@ -47,12 +47,11 @@ public class NiemValidationService {
     List<File> files = this.loadFiles(tempPath, multipartFile);
     List<File> xsdFiles = files.stream().filter(file -> file.getName().endsWith(".xsd")).toList();
 
-    File[] fileArray = files.toArray(File[]::new);
+    // File[] fileArray = files.toArray(File[]::new);
     File[] xsdFileArray = xsdFiles.toArray(File[]::new);
 
     // Check for required IEPD catalog
     File messageCatalogFile = this.findMessageCatalog(files);
-    Version version = null;
 
     // Validate message catalog
     this.testMessageCatalogValidation(tests, messageCatalogFile);
@@ -113,7 +112,7 @@ public class NiemValidationService {
   }
 
   public Test validateCmf(File cmfFile) throws IOException, SAXException {
-    Source[] xsdSources = ValidationUtils.getClasspathXsdSources("validation/cmf/v0.6");
+    Source[] xsdSources = ValidationUtils.getClasspathXsdSources("validation/cmf/v0.8");
     Test test = xmlValidationService.validateXmlOnly(cmfFile, xsdSources, "validate-cmf", "Validate a CMF against the NIEM Common Model Format Specification");
     return test;
   }
@@ -175,10 +174,28 @@ public class NiemValidationService {
   public List<Test> validateXsdWithNdr(MultipartFile multipartFile) throws Exception {
     Path tempPath = ValidationUtils.createTempFolder();
     File inputFile = FileUtils.saveFile(multipartFile, tempPath).toFile();
-    ZipUtils.unzip(inputFile.toPath(), tempPath);
-    List<Path> paths = FileUtils.getFilePathsFromDirWithExtension(tempPath, ".xsd");
-    List<File> files = paths.stream().map(Path::toFile).toList();
+    List<File> files = new ArrayList<>();
+
+    String extension = FileUtils.getFileExtension(multipartFile);
+
+    if (extension.equals("zip")) {
+      // Process zip file
+      ZipUtils.unzip(inputFile.toPath(), tempPath);
+      List<Path> paths = FileUtils.getFilePathsFromDirWithExtension(tempPath, ".xsd");
+      files = paths.stream().map(Path::toFile).toList();
+    }
+    else if (extension.equals("xsd")) {
+      // Process single XSD file
+      Path xsdPath = FileUtils.saveFile(multipartFile, tempPath) ;
+      files.add(xsdPath.toFile());
+    }
+    else {
+      throw new BadRequestException("A zip file or a XSD file is required.");
+    }
+
+    // Run validation tests and clean up temp files
     List<Test> tests = ndrValidationService.validateXsdWithNdr(files, true);
+    FileUtils.deleteTempDir(tempPath);
     return tests;
   }
 

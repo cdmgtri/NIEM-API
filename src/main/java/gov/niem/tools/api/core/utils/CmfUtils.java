@@ -1,8 +1,8 @@
 package gov.niem.tools.api.core.utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.FileOutputStream;
 import java.nio.file.Path;
 
 import org.json.JSONObject;
@@ -15,16 +15,14 @@ import gov.niem.tools.api.core.config.Config.AppMediaType;
 public class CmfUtils {
 
   /**
-   * Generate CMF model as an XML or JSON string
+   * Generate CMF model as an CMF XML or JSON string
    */
   public static String generateString(Model model, AppMediaType mediaType) throws Exception {
-    StringWriter stringWriter = new StringWriter();
-    PrintWriter printWriter = new PrintWriter(stringWriter);
     ModelXMLWriter modelXMLWriter = new ModelXMLWriter();
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    modelXMLWriter.writeXML(model, printWriter);
-    printWriter.flush();
-    String xml = stringWriter.toString();
+    modelXMLWriter.writeXML(model, outputStream);
+    String xml = outputStream.toString();
 
     if (mediaType == AppMediaType.json) {
       JSONObject json = JsonUtils.xmlToJson(xml);
@@ -33,6 +31,13 @@ public class CmfUtils {
     }
 
     return xml;
+  }
+
+  /**
+   * Generate CMF model as an CMF XML string
+   */
+  public static String generateString(Model model) throws Exception {
+    return generateString(model, AppMediaType.xml);
   }
 
   /**
@@ -47,12 +52,14 @@ public class CmfUtils {
     // Set up the new file in the given directory
     String filepathString = String.format("%s/%s.cmf.xml", path.toString(), filenameBase);
     File file = FileUtils.file(filepathString);
+    // file.createNewFile();
 
     // Write the CMF model to the new file
-    PrintWriter writer = new PrintWriter(file);
+    FileOutputStream fileOutputStream = new FileOutputStream(file);
     ModelXMLWriter cmfWriter = new ModelXMLWriter();
-    cmfWriter.writeXML(cmf, writer);
-    writer.close();
+    cmfWriter.writeXML(cmf, fileOutputStream);
+    fileOutputStream.flush();
+    fileOutputStream.close();
 
     return file;
 

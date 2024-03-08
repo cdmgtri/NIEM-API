@@ -4,32 +4,35 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import gov.niem.tools.api.db.property.Property;
 import gov.niem.tools.api.db.type.Type;
-import gov.niem.tools.api.validation.Test.Severity;
+import gov.niem.tools.api.validation.Results.ResultsFormat;
 import gov.niem.tools.api.validation.niem.NiemValidationService;
 import gov.niem.tools.api.validation.xml.XmlValidationService;
 import io.swagger.v3.oas.annotations.Hidden;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.log4j.Log4j2;
 
-@Log4j2
 @RestController
-@RequestMapping("/validation")
-@Tag(name = "Validation", description = "ALPHA 4 PREVIEW: Run XML, JSON, and NDR validation on instances, schemas, message specifications, ")
+@RequestMapping(value = "/validation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+@Tag(name = "Validation", description = "Validate models and artifacts.")
+@ApiResponse(responseCode = "200", description = "Success", content = {
+  @Content(mediaType = "application/json"),
+  @Content(mediaType = "text/csv"),
+})
+@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content)
+@ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
+@ApiResponse(responseCode = "500", description = "Error", content = @Content)
 public class ValidationController {
 
   @Autowired
@@ -41,20 +44,22 @@ public class ValidationController {
   @Autowired
   NiemValidationService niemValidationService;
 
+  // TODO: Resolve request body vs query parameter issue.  @RequestPart generates parameter as a body parameter but does not document allowable enum values in the OpenAPI file.  Defaulting to @RequestParam now with additional documentation noting request body params.
+
   /**
    * Validate one or more XML Schemas.
    *
-   * @param file XML Schema or zip file
+   * @param file REQUEST BODY PARAMETER.  Single XML Schema or a zip file containing
+   * multiple XML Schemas.
+   * @param mediaType File format for the validation results.
    * @throws Exception
    */
-  @PostMapping(value = "schemas/xml", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
+  @PostMapping(value = "schemas/xml")
   public Object getXsdValidation(
-    @RequestParam MultipartFile file,
-    @RequestParam(defaultValue = "json") String mediaType)
-    throws Exception {
+    @RequestPart MultipartFile file,
+    // TODO: @RequestPart(required = false) @Value("json") ResultsFormat mediaType
+    @RequestParam(required = false, defaultValue = "json") ResultsFormat mediaType
+  ) throws Exception {
 
     Results results = new Results();
     Test test = xmlValidationService.validateXsd(file);
@@ -67,16 +72,14 @@ public class ValidationController {
    *
    * @param xml An XML instance file or set of XML instance files in a zip file.
    * @param xsd An XML schema or set of XML schemas in a zip file.
+   * @param mediaType REQUEST BODY PARAMETER. File format for the validation results.
    * @throws Exception
    */
-  @PostMapping(value = "instances/xml", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
+  @PostMapping(value = "instances/xml")
   public Object getXMLValidation(
-    @RequestParam MultipartFile xml,
-    @RequestParam MultipartFile xsd,
-    @RequestParam(defaultValue = "json") String mediaType
+    @RequestPart MultipartFile xml,
+    @RequestPart MultipartFile xsd,
+    @RequestParam(required = false, defaultValue = "json") ResultsFormat mediaType
   ) throws Exception {
 
     Results results = new Results();
@@ -89,13 +92,12 @@ public class ValidationController {
    * Validate a XML catalog against the OASIS catalog schema.
    *
    * @param file An XML catalog file.
+   * @param mediaType REQUEST BODY PARAMETER. File format for the validation results.
    */
-  @PostMapping(value = "xml-catalog", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
-  public Object getXmlCatalogXmlValidation(@RequestParam MultipartFile file,
-    @RequestParam(defaultValue = "json") String mediaType
+  @PostMapping(value = "xml-catalog")
+  public Object getXmlCatalogXmlValidation(
+    @RequestPart MultipartFile file,
+    @RequestParam(required = false, defaultValue = "json") ResultsFormat mediaType
   ) throws Exception {
     Results results = new Results();
     Test test = this.xmlValidationService.validateXmlCatalog(file);
@@ -108,15 +110,13 @@ public class ValidationController {
    * message catalog schema.
    *
    * @param file An IEPD / message catalog instance file
+   * @param mediaType REQUEST BODY PARAMETER. File format for the validation results.
    * @throws Exception
    */
-  @PostMapping(value = "message-catalog", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
+  @PostMapping(value = "message-catalog")
   public Object getMessageCatalogXMLValidation(
-    @RequestParam MultipartFile file,
-    @RequestParam(defaultValue = "json") String mediaType
+    @RequestPart MultipartFile file,
+    @RequestParam(required = false, defaultValue = "json") ResultsFormat mediaType
   ) throws Exception {
 
     Results results = new Results();
@@ -127,15 +127,14 @@ public class ValidationController {
 
   /**
    * Validate a CMF XML file against the NIEM CMF XML schema.
+
    * @param file A CMF XML file.
+   * @param mediaType REQUEST BODY PARAMETER. File format for the validation results.
    */
-  @PostMapping(value = "cmf/xml", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
+  @PostMapping(value = "cmf/xml")
   public Object getCmfXMLValidation(
-    @RequestParam MultipartFile file,
-    @RequestParam(defaultValue = "json") String mediaType
+    @RequestPart MultipartFile file,
+    @RequestParam(required = false, defaultValue = "json") ResultsFormat mediaType
   ) throws Exception {
 
     Results results = new Results();
@@ -148,15 +147,20 @@ public class ValidationController {
    * Validate a message specification or IEPD zip file against NIEM message
    * specification / IEPD conformance rules.
    *
+   * Runs the following checks:
+   *
+   * - Validates the MPD or IEPD catalog.
+   * - Validates XML catalogs
+   * - Validates XML schemas
+   * - Validates XML schemas against NDR conformance rules
+   *
    * @param file A message specification or IEPD zip file.
+   * @param mediaType REQUEST BODY PARAMETER. File format for the validation results.
    */
-  @PostMapping(value = "message-specification", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
+  @PostMapping(value = "message-specification")
   public Object getMessageSpecificationValidation(
-    @RequestParam MultipartFile file,
-    @RequestParam(defaultValue = "json") String mediaType
+    @RequestPart MultipartFile file,
+    @RequestParam(required = false, defaultValue = "json") ResultsFormat mediaType
   ) throws Exception {
 
     Results results = new Results();
@@ -169,15 +173,14 @@ public class ValidationController {
    * Validate one or more XML Schemas against the NIEM Naming and Design Rules (NDR).
    *
    * @param file XML Schema or zip file
+   * @param mediaType REQUEST BODY PARAMETER. File format for the validation results.
    * @throws Exception
    */
-  @PostMapping(value = "schemas/ndr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
+  @PostMapping(value = "schemas/ndr")
+  @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content)
   public Object getSchemaNDRValidation(
-    @RequestParam MultipartFile file,
-    @RequestParam(defaultValue = "json") String mediaType
+    @RequestPart MultipartFile file,
+    @RequestParam(required = false, defaultValue = "json") ResultsFormat mediaType
   ) throws Exception {
 
     Results results = new Results();
@@ -191,80 +194,53 @@ public class ValidationController {
    *
    * @param file A JSON Schema file
    */
-  @PostMapping(value = "schemas/json", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
-  public Results getSchemaJsonValidation(@RequestParam MultipartFile file) {
-    // Validate JSON Schema
+  @Hidden
+  @PostMapping(value = "schemas/json")
+  public Results getSchemaJsonValidation(@RequestPart MultipartFile file) {
+    // TODO: Validate JSON Schema
     return null;
   }
 
+  /**
+   * Validate a XML schema against NIEM qa rules and best practices.
+   */
   @Hidden
-  @PostMapping(value = "schemas/qa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "Validate a XML schema against NIEM qa rules and best practices")
-  public Results getSchemaQaValidation(@RequestParam MultipartFile file) {
+  @PostMapping(value = "schemas/qa")
+  public Results getSchemaQaValidation(@RequestPart MultipartFile file) {
+    // TODO: Run QA on schemas
     return null;
   }
 
   /**
    * Validate one or more JSON instances against a JSON Schema.
    *
-   * @param json       A JSON instance file or set of JSON instance files in a zip
-   *                   file.
+   * @param json A JSON instance file or set of JSON instance files in a zip file.
    * @param jsonSchema A JSON Schema file.
    */
-  @PostMapping(value = "instances/json", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
-  public Results getInstanceJSONValidation(@RequestParam MultipartFile json, @RequestParam MultipartFile jsonSchema) {
-    // Validate JSON Instance
-
-    Results results = new Results();
-
-    Test test1 = Test.builder()
-    .description("Missing property \"j:Crash\".")
-    .severity(Severity.warning)
-    .build();
-
-    TestResult issue1 = TestResult.builder()
-    .location("CrashDriver.json")
-    .line("11")
-    .build();
-
-    test1.results.add(issue1);
-    results.tests.add(test1);
-
-
-    Test test2 = Test.builder()
-    .description("Incorrect type. Expected \"object\".")
-    .severity(Severity.warning)
-    .build();
-
-    TestResult issue2 = TestResult.builder()
-    .location("CrashDriver.json")
-    .line("15")
-    .build();
-
-    test2.results.add(issue2);
-    results.tests.add(test2);
-
-
-    return results;
-  }
-
   @Hidden
-  @PostMapping(value = "cmf/ndr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "Validate a CMF XML file against NIEM CMF NDR rules")
-  public Results getCmfNDRValidation(@RequestParam MultipartFile file) {
+  @PostMapping(value = "instances/json")
+  public Results getInstanceJSONValidation(@RequestPart MultipartFile json, @RequestPart MultipartFile jsonSchema) {
+    // TODO: Validate JSON Instance
     return null;
   }
 
+  /**
+   * Validate a CMF XML file against NIEM CMF NDR rules.
+   */
   @Hidden
-  @PostMapping(value = "cmf/qa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "Validate a CMF XML file against NIEM QA rules and best practices")
-  public Results getCmfQaValidation(@RequestParam MultipartFile file) {
+  @PostMapping(value = "cmf/ndr")
+  public Results getCmfNDRValidation(@RequestPart MultipartFile file) {
+    // TODO: Validate a CMF file against model-related NDR rules.
+    return null;
+  }
+
+  /**
+   * Validate a CMF XML file against NIEM QA rules and best practices.
+   */
+  @Hidden
+  @PostMapping(value = "cmf/qa")
+  public Results getCmfQaValidation(@RequestPart MultipartFile file) {
+    // TODO: Run QA against a CMF file.
     return null;
   }
 
@@ -275,11 +251,10 @@ public class ValidationController {
    * @param niemVersionNumber Applicable base NIEM version number. Defaults to
    *                          the current version if not provided.
    */
-  @PostMapping(value = "properties/qa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
-  public Results getPropertyQaValidation(@RequestParam Property property, @PathVariable(required = false) String niemVersionNumber) {
-    // Validate property
+  @Hidden
+  @PostMapping(value = "properties/qa")
+  public Results getPropertyQaValidation(@RequestPart Property property, @PathVariable(required = false) String niemVersionNumber) {
+    // TODO: Validate property
     return null;
   }
 
@@ -290,22 +265,25 @@ public class ValidationController {
    * @param niemVersionNumber Applicable base NIEM version number. Defaults to
    *                          the current version if not provided.
    */
-  @PostMapping(value = "types/qa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @ResponseStatus(code = HttpStatus.OK)
-  @ApiResponse(responseCode = "500", description = "Error", content = @Content)
-  public Results getTypeQaValidation(@RequestParam Type type, @PathVariable(required = false) String niemVersionNumber) {
+  @Hidden
+  @PostMapping(value = "types/qa")
+  public Results getTypeQaValidation(@RequestPart Type type, @PathVariable(required = false) String niemVersionNumber) {
     // Validate type
     return null;
   }
 
-  private Object handleResults(Results results, String mediaType, MultipartFile file) throws Exception {
+  /**
+   * Return validation results as JSON or a CSV.
+   */
+  private Object handleResults(Results results, ResultsFormat mediaType, MultipartFile file) throws Exception {
 
     results.setDefaultComment();
 
-    if (mediaType.equals("csv")) {
+    if (mediaType.equals(ResultsFormat.csv)) {
       return validationService.returnResultsAsCsv(results, file);
     }
 
+    // Default results as JSON
     return results;
 
   }

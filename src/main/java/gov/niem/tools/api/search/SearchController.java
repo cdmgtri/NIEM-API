@@ -228,21 +228,6 @@ public class SearchController {
    *
    * @param prefix            Filter results on the given prefix(es)
    *
-   * @param type              Filter results by substring matching on one of the
-   *                          given types.
-   *                          Example: ["text", "boolean"] matches properties with
-   *                          types that include nc:TextType and niem-xs:boolean.
-   *
-   * @param isAbstract        True if only abstract properties should be returned;
-   *                          false if only
-   *                          non-abstract (concrete) properties should be
-   *                          returned. Omit parameter to return either kind.
-   *
-   * @param isElement         True if only element properties should be returned;
-   *                          false if only attribute
-   *                          properties should be returned. Omit parameter to
-   *                          return either kind.
-   *
    * @param offset            A number of results to skip. Defaults to 0.
    *
    * @param limit             A maximum number of results to return. Defaults to
@@ -300,21 +285,6 @@ public class SearchController {
    *                          "Armed", "Arming", "Alarm", "Firearm", "Harm", etc.
    *
    * @param prefix            Filter results on the given prefix(es)
-   *
-   * @param type              Filter results by substring matching on one of the
-   *                          given types.
-   *                          Example: ["text", "boolean"] matches properties with
-   *                          types that include nc:TextType and niem-xs:boolean.
-   *
-   * @param isAbstract        True if only abstract properties should be returned;
-   *                          false if only
-   *                          non-abstract (concrete) properties should be
-   *                          returned. Omit parameter to return either kind.
-   *
-   * @param isElement         True if only element properties should be returned;
-   *                          false if only attribute
-   *                          properties should be returned. Omit parameter to
-   *                          return either kind.
    *
    * @param offset            A number of results to skip. Defaults to 0.
    *

@@ -72,6 +72,8 @@ public class NdrValidationService {
       this.buildTransformer(tempPath, "4.0", "ext");
       this.buildTransformer(tempPath, "5.0", "ref");
       this.buildTransformer(tempPath, "5.0", "ext");
+      this.buildTransformer(tempPath, "6.0", "ref");
+      this.buildTransformer(tempPath, "6.0", "ext");
     }
   }
 
@@ -89,7 +91,20 @@ public class NdrValidationService {
 
   private String getXsdNdrKey(String conformanceTargets) {
 
-    String regex = "http://reference.niem.gov/niem/specification/naming-and-design-rules/(.*)/#(.*)SchemaDocument";
+    String regex;
+
+    // NDR 3.0 - NDR 5.0
+    if (conformanceTargets.contains("http://reference.niem.gov/niem/specification/naming-and-design-rules/")) {
+      regex = "http://reference.niem.gov/niem/specification/naming-and-design-rules/(.*)/#(.*)SchemaDocument";
+    }
+    // NDR 6.0
+    else if (conformanceTargets.contains("https://docs.oasis-open.org/niemopen/ns/specification/XNDR/")) {
+      regex = "https://docs.oasis-open.org/niemopen/ns/specification/XNDR/(.*)/#(.*)SchemaDocument";
+    }
+    else {
+      return null;
+    }
+
     Pattern pattern = Pattern.compile(regex);
     Matcher matcher = pattern.matcher(conformanceTargets);
 
@@ -257,7 +272,7 @@ public class NdrValidationService {
         else if (line.startsWith("   <svrl:successful-report")) {
           // Report warning
           line = reader.readLine();
-          String role = line;
+          // String role = line;
 
           // Get xpath to component
           line = reader.readLine();

@@ -46,17 +46,17 @@ public class Application {
                       .name("NIEMOpen")
                       .url("https://niemopen.org")))
       .addServersItem(
+        new Server()
+        .url("https://tools.niem.gov/api/v2")
+        .description("Production server"))
+      .addServersItem(
           new Server()
-              .url("https://tools.niem.gov/api/v2")
-              .description("Production server"))
+              .url("https://tools.niem.gov/api/mep")
+              .description("MEP instance server"))
       .addServersItem(
           new Server()
               .url("http://localhost:8080/api/v2")
-              .description("Local machine"))
-      .addServersItem(
-          new Server()
-              .url("https://yellowkiwi06.icl.gtri.org/")
-              .description("Internal test server"));
+              .description("Local machine"));
   }
 
 }

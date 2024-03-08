@@ -1,7 +1,12 @@
 
 app:
+  baseUrl: http://localhost:8080/api/v2
+  cmf:
+    version: 0.8
+    uri: https://docs.oasis-open.org/niemopen/ns/specification/cmf/0.8/
+  cmftool:
+    version: 0.7-alpha.6
   draft: ${project.ext.draft?:PENDING_BUILD}
-  baseUrl: https://tools.niem.gov/api/v2
 
 logging:
   level:
@@ -10,6 +15,26 @@ logging:
     org.springframework.core.LocalVariableTableParameterNameDiscoverer: ERROR
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
     web: DEBUG
+  file:
+    path: logs
+
+# Spring boot actuator settings
+management:
+  endpoint:
+    health:
+      group:
+        custom:
+          show-components: always
+          show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: metrics, info, health
+#   # info:
+#   #   env:
+#   #     enabled: true
+#   # server:
+#   #   port: 8085
 
 server:
   compression:
@@ -18,17 +43,21 @@ server:
     - application/xml
     - application/json
     min-response-size: 1024
+  error:
+    include-message: always
   servlet:
     context-path: /api/v2
 
 spring:
+  config:
+    import: secrets.yaml
+
   datasource:
-    # url: jdbc:postgresql://localhost:5432/niem-api-v2
-    url: jdbc:postgresql://niem-api_db_1:5432/niem-api-v2
-    # url: jdbc:postgresql://niem-api-mep_db_1:5432/niem-api-v2
-    username: postgres
-    password: postgres
     driver-class-name: org.postgresql.Driver
+    # url: jdbc:postgresql://niem-mep-api-db-1:5432/niem-api-v2
+    # url: jdbc:postgresql://niem-api-db-1:5432/niem-api-v2
+    # url: jdbc:postgresql://niem-api-db_1:5432/niem-api-v2
+    url: jdbc:postgresql://localhost:5432/niem-api-v2-2
 
   jackson:
     # default-property-inclusion: non-null
@@ -42,8 +71,11 @@ spring:
     defer-datasource-initialization: true
     generate-ddl: true
     hibernate:
+      # ddl-auto: update
+      # ddl-auto: create-drop
       # ddl-auto: create
       ddl-auto: none
+    # open-in-view: false
     properties:
       enable_lazy_load_no_trans: true
       format_sql: true
@@ -63,7 +95,18 @@ spring:
             directory:
               root: ./db/indexes
               type: local-filesystem
-    show-sql: false
+            lucene_version: LATEST
+        # transaction:
+        #   jta:
+        #     platform: org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform
+      # jakarta:
+      #   persistence:
+      #     schema-generation:
+      #       create-source: metadata
+      #       scripts:
+      #         action: create
+      #         create-target: schema-public.sql
+      show-sql: false
 
   output:
     ansi:

@@ -1,0 +1,4308 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "contact": {
+      "name": "NIEMOpen",
+      "url": "https://niemopen.org"
+    },
+    "description": "Community support for common NIEM tool functionality to browse and search the model, build and migrate subsets, and check conformance",
+    "title": "NIEM API 2.0",
+    "version": "2.0-alpha07:SNAPSHOT"
+  },
+  "servers": [
+    {
+      "url": "https://tools.niem.gov/api/v2",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:8080/api/v2",
+      "description": "Local machine"
+    },
+    {
+      "url": "https://yellowkiwi06.icl.gtri.org/",
+      "description": "Internal test server"
+    }
+  ],
+  "tags": [
+    {
+      "description": "A property represents a concept, idea, or thing. It defines specific semantics and appears in exchanges as the tag or label for a field.",
+      "name": "Data-5: Properties"
+    },
+    {
+      "description": "A group or entity responsible for managing NIEM content.",
+      "name": "Data-1: Stewards"
+    },
+    {
+      "description": "Transformations",
+      "name": "Transforms"
+    },
+    {
+      "description": "A reference or message NIEM data model.",
+      "name": "Data-2: Models"
+    },
+    {
+      "description": "An instance of a model, e.g., release.",
+      "name": "Data-3: Versions"
+    },
+    {
+      "description": "A type defines a structure - an allowable set of values. A type might describe a simple value (e.g., a string, a number) or a complex object (e.g., PersonType).",
+      "name": "Data-6: Types"
+    },
+    {
+      "description": "General application calls",
+      "name": "App"
+    },
+    {
+      "description": "Validate models and artifacts.",
+      "name": "Validation"
+    },
+    {
+      "description": "Search for properties and types",
+      "name": "Search"
+    },
+    {
+      "description": "Migrate to a newer NIEM version",
+      "name": "Migrations"
+    },
+    {
+      "description": "A subproperty is the occurrence of a property as it appears when contained by a type.  It carries additional characteristics in this situation, such as cardinality constraints.",
+      "name": "Data-7: Subproperties"
+    },
+    {
+      "description": "A collection of properties and types managed by an authoritative source.",
+      "name": "Data-4: Namespace"
+    },
+    {
+      "description": "A facet is a code, pattern, length, minimum or maximum value, or other such kind of constraint on a data value, such as a string or number.",
+      "name": "Data-8: Facets"
+    }
+  ],
+  "paths": {
+    "/migration/cmf": {
+      "post": {
+        "description": "Migrate a version of a supported model in a CMF file to a newer version.\n\n Note: Only models stored via the NIEM API and that have migration rules are supported.",
+        "operationId": "migrateCMF",
+        "parameters": [
+          {
+            "description": "[REQUEST BODY PARAMETER]\n The version of the data model represented in the CMF file.",
+            "example": 3.1,
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "[REQUEST BODY PARAMETER]\n A more recent version of the data model to which the CMF file should be migrated.",
+            "example": 5.2,
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "[REQUEST BODY PARAMETER]\n A steward identifier. Defaults to the NIEM steward identifier to migrate a NIEM subset.",
+            "example": "niem",
+            "in": "query",
+            "name": "stewardKey",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "[REQUEST BODY PARAMETER]\n A model identifier for the CMF file. Defaults to the NIEM data model to migrate a NIEM subset.",
+            "example": "model",
+            "in": "query",
+            "name": "modelKey",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A CMF file containing properties and types to be migrated."
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {}
+            },
+            "description": "Zip file with updated CMF file and a JSON file with issues encountered during the migration."
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Migrate a version of a supported model in a CMF file to a newer version.",
+        "tags": [
+          "Migrations"
+        ]
+      }
+    },
+    "/search.cmf/properties": {
+      "get": {
+        "operationId": "getPropertySearchCmf",
+        "parameters": [
+          {
+            "description": "A base NIEM version number (e.g., \"5.2\") to search for NIEM\n and community content. Defaults to the current NIEM version if not provided.",
+            "in": "query",
+            "name": "niemVersionNumber",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Search for full tokens in component names and definitions with stemming.\n Example: \"arm\" returns property names with \"Arm\", \"Armed\", and \"Arming\" but does not return\n \"Alarm\", \"Firearm\", \"Harm\", etc.",
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Search for partial text in component names and definitions.\n Example: \"arm\" returns property names with \"Arm\", \"Armed\", \"Arming\", \"Alarm\",\n \"Firearm\", \"Harm\", etc.",
+            "in": "query",
+            "name": "substring",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Filter results on the given prefix(es)",
+            "in": "query",
+            "name": "prefix",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Filter results by substring matching on one of the given types.\n Example: [\"text\", \"boolean\"] matches properties with types that include nc:TextType\n and niem-xs:boolean.",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "True if only abstract properties should be returned; false if only\n non-abstract (concrete) properties should be returned.  Omit parameter to return either kind.",
+            "in": "query",
+            "name": "isAbstract",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "True if only element properties should be returned; false if only attribute\n properties should be returned.  Omit parameter to return either kind.",
+            "in": "query",
+            "name": "isElement",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "A number of results to skip.  Defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "description": "A maximum number of results to return.  Defaults to and will not exceed 100.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Search for properties and return results as a CMF model.",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/search.cmf/types": {
+      "get": {
+        "operationId": "getTypeSearchCmf",
+        "parameters": [
+          {
+            "description": "A base NIEM version number (e.g., \"5.2\") to search\n                          for NIEM\n                          and community content. Defaults to the current NIEM\n                          version if not provided.",
+            "in": "query",
+            "name": "niemVersionNumber",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Search for full tokens in component names and\n                          definitions with stemming.\n                          Example: \"arm\" returns property names with \"Arm\",\n                          \"Armed\", and \"Arming\" but does not return\n                          \"Alarm\", \"Firearm\", \"Harm\", etc.",
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Search for partial text in component names and\n                          definitions.\n                          Example: \"arm\" returns property names with \"Arm\",\n                          \"Armed\", \"Arming\", \"Alarm\", \"Firearm\", \"Harm\", etc.",
+            "in": "query",
+            "name": "substring",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Filter results on the given prefix(es)",
+            "in": "query",
+            "name": "prefix",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "A number of results to skip. Defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "description": "A maximum number of results to return. Defaults to\n                          and will not exceed 100.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Search for types and return results as a CMF model.",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/search/properties": {
+      "get": {
+        "operationId": "getPropertySearch",
+        "parameters": [
+          {
+            "description": "A base NIEM version number (e.g., \"5.2\") to search for NIEM\n and community content. Defaults to the current NIEM version if not provided.",
+            "in": "query",
+            "name": "niemVersionNumber",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Search for full tokens in component names and definitions with stemming.\n Example: \"arm\" returns property names with \"Arm\", \"Armed\", and \"Arming\" but does not return\n \"Alarm\", \"Firearm\", \"Harm\", etc.",
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Search for partial text in component names and definitions.\n Example: \"arm\" returns property names with \"Arm\", \"Armed\", \"Arming\", \"Alarm\", \"Firearm\", \"Harm\", etc.",
+            "in": "query",
+            "name": "substring",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Filter results on the given prefix(es)",
+            "in": "query",
+            "name": "prefix",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Filter results by substring matching on one of the given types.\n Example: [\"text\", \"boolean\"] matches properties with types that include nc:TextType and niem-xs:boolean.",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "True if only abstract properties should be returned; false if only\n non-abstract (concrete) properties should be returned.  Omit parameter to return either kind.",
+            "in": "query",
+            "name": "isAbstract",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "True if only element properties should be returned; false if only attribute\n properties should be returned.  Omit parameter to return either kind.",
+            "in": "query",
+            "name": "isElement",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "A number of results to skip.  Defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "description": "A maximum number of results to return.  Defaults to and will not exceed 100.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Property"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Search for properties",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/search/types": {
+      "get": {
+        "operationId": "getTypeSearch",
+        "parameters": [
+          {
+            "description": "A base NIEM version number (e.g., \"5.2\") to search\n                          for NIEM\n                          and community content. Defaults to the current NIEM\n                          version if not provided.",
+            "in": "query",
+            "name": "niemVersionNumber",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Search for full tokens in component names and\n                          definitions with stemming.\n                          Example: \"arm\" returns property names with \"Arm\",\n                          \"Armed\", and \"Arming\" but does not return\n                          \"Alarm\", \"Firearm\", \"Harm\", etc.",
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Search for partial text in component names and\n                          definitions.\n                          Example: \"arm\" returns property names with \"Arm\",\n                          \"Armed\", \"Arming\", \"Alarm\", \"Firearm\", \"Harm\", etc.",
+            "in": "query",
+            "name": "substring",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "Filter results on the given prefix(es)",
+            "in": "query",
+            "name": "prefix",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "A number of results to skip. Defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "description": "A maximum number of results to return. Defaults to\n                          and will not exceed 100.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Type"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Search for types",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/stewards": {
+      "get": {
+        "operationId": "getStewards",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Steward"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get all stewards",
+        "tags": [
+          "Data-1: Stewards"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}": {
+      "get": {
+        "operationId": "getSteward",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Steward"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get a steward",
+        "tags": [
+          "Data-1: Stewards"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models": {
+      "get": {
+        "description": "Use wildcard \u0027*\u0027 for the steward key to return all models",
+        "operationId": "getStewardModels",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Model"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get all models from a steward",
+        "tags": [
+          "Data-2: Models"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}": {
+      "get": {
+        "operationId": "getModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Model"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get a model",
+        "tags": [
+          "Data-2: Models"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions": {
+      "get": {
+        "operationId": "getVersions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Version"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get all versions of a model.",
+        "tags": [
+          "Data-3: Versions"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions.cmf/{versionKey}": {
+      "get": {
+        "operationId": "getVersionCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get a version",
+        "tags": [
+          "Data-3: Versions"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionKey}": {
+      "get": {
+        "operationId": "getVersion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Version"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get a version",
+        "tags": [
+          "Data-3: Versions"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces": {
+      "get": {
+        "description": "Get basic details about all namespaces in a version of a model.",
+        "operationId": "getVersionNamespaces",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Namespace"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get all namespaces from a specific model version",
+        "tags": [
+          "Data-4: Namespace"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces.cmf": {
+      "get": {
+        "description": "Get basic details about all namespaces in a version of a model.",
+        "operationId": "getVersionNamespacesCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get all namespaces in CMF from a specific model version",
+        "tags": [
+          "Data-4: Namespace"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces.cmf/{prefix}": {
+      "get": {
+        "description": "Get basic details about a namespace.",
+        "operationId": "getNamespaceCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get a namespace as CMF",
+        "tags": [
+          "Data-4: Namespace"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces.cmf/{prefix}/properties": {
+      "get": {
+        "operationId": "getNamespacePropertiesCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get all properties from a namespace",
+        "tags": [
+          "Data-4: Namespace"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces.cmf/{prefix}/types": {
+      "get": {
+        "operationId": "getNamespaceTypesCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get all types from a namespace as CMF.",
+        "tags": [
+          "Data-4: Namespace"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces/{prefix}": {
+      "get": {
+        "description": "Get basic details about a namespace.",
+        "operationId": "getNamespace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Namespace"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get a namespace",
+        "tags": [
+          "Data-4: Namespace"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces/{prefix}/properties": {
+      "get": {
+        "operationId": "getNamespaceProperties",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Property"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get all properties from a namespace",
+        "tags": [
+          "Data-4: Namespace"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces/{prefix}/subproperties": {
+      "get": {
+        "operationId": "getNamespaceSubproperties",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "uniqueItems": true,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Subproperty"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-7: Subproperties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/namespaces/{prefix}/types": {
+      "get": {
+        "operationId": "getNamespaceTypes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Type"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get all types from a namespace.",
+        "tags": [
+          "Data-4: Namespace"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/properties": {
+      "get": {
+        "operationId": "getAllProperties",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Property"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get all properties matching the given parameters.  Pending pagination implementation.",
+        "tags": [
+          "Data-5: Properties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/properties.cmf/{qname}": {
+      "get": {
+        "operationId": "getPropertyCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "qname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get the property with the given qualified name",
+        "tags": [
+          "Data-5: Properties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/properties/{propertyQname}/subproperties": {
+      "get": {
+        "operationId": "getPropertySubproperties",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "propertyQname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "uniqueItems": true,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Subproperty"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-7: Subproperties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/properties/{qname}": {
+      "get": {
+        "operationId": "getProperty",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "qname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Property"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get the property with the given qualified name",
+        "tags": [
+          "Data-5: Properties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/subproperties": {
+      "get": {
+        "operationId": "getAllSubproperties",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "uniqueItems": true,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Subproperty"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-7: Subproperties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types": {
+      "get": {
+        "operationId": "getAllTypes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Type"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get all types matching the given parameters.  Pending pagination implementation.",
+        "tags": [
+          "Data-6: Types"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types.cmf/{qname}": {
+      "get": {
+        "operationId": "getTypeCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "qname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get the type with the given qualified name",
+        "tags": [
+          "Data-6: Types"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types.cmf/{qname}/facets": {
+      "get": {
+        "operationId": "getFacetsCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "qname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-8: Facets"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types.cmf/{qname}/facets/{category}\u003d{value}": {
+      "get": {
+        "operationId": "getFacetCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "qname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "enumeration",
+                "pattern",
+                "length",
+                "minLength",
+                "maxLength",
+                "minExclusive",
+                "maxExclusive",
+                "minInclusive",
+                "maxInclusive",
+                "fractionDigits",
+                "totalDigits",
+                "whiteSpace"
+              ]
+            }
+          },
+          {
+            "in": "path",
+            "name": "value",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-8: Facets"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types.cmf/{typeQname}/subproperties": {
+      "get": {
+        "operationId": "getTypeSubpropertiesCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "typeQname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-7: Subproperties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types.cmf/{typeQname}/subproperties/{propertyQname}": {
+      "get": {
+        "operationId": "getSubpropertyCmf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "typeQname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "propertyQname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-7: Subproperties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types/{qname}": {
+      "get": {
+        "operationId": "getType",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "qname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Type"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Get the type with the given qualified name",
+        "tags": [
+          "Data-6: Types"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types/{qname}/facets": {
+      "get": {
+        "operationId": "getFacets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "qname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "uniqueItems": true,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Facet"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-8: Facets"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types/{qname}/facets/{category}\u003d{value}": {
+      "get": {
+        "operationId": "getFacet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "qname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "enumeration",
+                "pattern",
+                "length",
+                "minLength",
+                "maxLength",
+                "minExclusive",
+                "maxExclusive",
+                "minInclusive",
+                "maxInclusive",
+                "fractionDigits",
+                "totalDigits",
+                "whiteSpace"
+              ]
+            }
+          },
+          {
+            "in": "path",
+            "name": "value",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Facet"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-8: Facets"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types/{typeQname}/subproperties": {
+      "get": {
+        "operationId": "getTypeSubproperties",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "typeQname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "uniqueItems": true,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Subproperty"
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-7: Subproperties"
+        ]
+      }
+    },
+    "/stewards/{stewardKey}/models/{modelKey}/versions/{versionNumber}/types/{typeQname}/subproperties/{propertyQname}": {
+      "get": {
+        "operationId": "getSubproperty",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stewardKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "modelKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionNumber",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "typeQname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "propertyQname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subproperty"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Data-7: Subproperties"
+        ]
+      }
+    },
+    "/transforms/models": {
+      "post": {
+        "description": "Transform a model from one supported NIEM format to another.",
+        "operationId": "transformModel",
+        "parameters": [
+          {
+            "description": "[REQUEST BODY PARAMETER] The current model format of the input file.",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "cmf",
+                "xsd"
+              ]
+            }
+          },
+          {
+            "description": "[REQUEST BODY PARAMETER] The requested output format for the transformation.",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "cmf",
+                "owl",
+                "xsd",
+                "json_schema"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A file with a NIEM model."
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {},
+              "application/xml": {},
+              "application/zip": {},
+              "text/turtle": {}
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Transform a model from one supported NIEM format to another.",
+        "tags": [
+          "Transforms"
+        ]
+      }
+    },
+    "/validation/cmf/xml": {
+      "post": {
+        "description": "Validate a CMF XML file against the NIEM CMF XML schema.",
+        "operationId": "getCmfXMLValidation",
+        "parameters": [
+          {
+            "description": "REQUEST BODY PARAMETER. File format for the validation results.",
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A CMF XML file."
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {},
+              "text/csv": {}
+            },
+            "description": "Success"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Validate a CMF XML file against the NIEM CMF XML schema.",
+        "tags": [
+          "Validation"
+        ]
+      }
+    },
+    "/validation/instances/xml": {
+      "post": {
+        "description": "Validate one or more XML instances against XML schemas.",
+        "operationId": "getXMLValidation",
+        "parameters": [
+          {
+            "description": "REQUEST BODY PARAMETER. File format for the validation results.",
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "xml": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "An XML instance file or set of XML instance files in a zip file."
+                  },
+                  "xsd": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "An XML schema or set of XML schemas in a zip file."
+                  }
+                },
+                "required": [
+                  "xml",
+                  "xsd"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {},
+              "text/csv": {}
+            },
+            "description": "Success"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Validate one or more XML instances against XML schemas.",
+        "tags": [
+          "Validation"
+        ]
+      }
+    },
+    "/validation/message-catalog": {
+      "post": {
+        "description": "Validate an IEPD / message catalog instance file against the NIEM IEPD /\n message catalog schema.",
+        "operationId": "getMessageCatalogXMLValidation",
+        "parameters": [
+          {
+            "description": "REQUEST BODY PARAMETER. File format for the validation results.",
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "An IEPD / message catalog instance file"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {},
+              "text/csv": {}
+            },
+            "description": "Success"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Validate an IEPD / message catalog instance file against the NIEM IEPD /\n message catalog schema.",
+        "tags": [
+          "Validation"
+        ]
+      }
+    },
+    "/validation/message-specification": {
+      "post": {
+        "description": "Validate a message specification or IEPD zip file against NIEM message\n specification / IEPD conformance rules.\n\n Runs the following checks:\n\n - Validates the MPD or IEPD catalog.\n - Validates XML catalogs\n - Validates XML schemas\n - Validates XML schemas against NDR conformance rules",
+        "operationId": "getMessageSpecificationValidation",
+        "parameters": [
+          {
+            "description": "REQUEST BODY PARAMETER. File format for the validation results.",
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A message specification or IEPD zip file."
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {},
+              "text/csv": {}
+            },
+            "description": "Success"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Validate a message specification or IEPD zip file against NIEM message\n specification / IEPD conformance rules.",
+        "tags": [
+          "Validation"
+        ]
+      }
+    },
+    "/validation/schemas/ndr": {
+      "post": {
+        "description": "Validate one or more XML Schemas against the NIEM Naming and Design Rules (NDR).",
+        "operationId": "getSchemaNDRValidation",
+        "parameters": [
+          {
+            "description": "REQUEST BODY PARAMETER. File format for the validation results.",
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "XML Schema or zip file"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {},
+              "text/csv": {}
+            },
+            "description": "Success"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Validate one or more XML Schemas against the NIEM Naming and Design Rules (NDR).",
+        "tags": [
+          "Validation"
+        ]
+      }
+    },
+    "/validation/schemas/xml": {
+      "post": {
+        "description": "Validate one or more XML Schemas.",
+        "operationId": "getXsdValidation",
+        "parameters": [
+          {
+            "description": "File format for the validation results.",
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "REQUEST BODY PARAMETER.  Single XML Schema or a zip file containing\n multiple XML Schemas."
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {},
+              "text/csv": {}
+            },
+            "description": "Success"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Validate one or more XML Schemas.",
+        "tags": [
+          "Validation"
+        ]
+      }
+    },
+    "/validation/xml-catalog": {
+      "post": {
+        "description": "Validate a XML catalog against the OASIS catalog schema.",
+        "operationId": "getXmlCatalogXmlValidation",
+        "parameters": [
+          {
+            "description": "REQUEST BODY PARAMETER. File format for the validation results.",
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "json",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "An XML catalog file."
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {},
+              "text/csv": {}
+            },
+            "description": "Success"
+          },
+          "415": {
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "description": "Error"
+          }
+        },
+        "summary": "Validate a XML catalog against the OASIS catalog schema.",
+        "tags": [
+          "Validation"
+        ]
+      }
+    },
+    "/version": {
+      "get": {
+        "description": "Get the current version of the NIEM API application.",
+        "operationId": "version",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {}
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Get the current version of the NIEM API application.",
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/version/cmf": {
+      "get": {
+        "description": "Get the current version of the CMF Specification supported by the NIEM API.",
+        "operationId": "cmfVersion",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {}
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Get the current version of the CMF Specification supported by the NIEM API.",
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/version/cmftool": {
+      "get": {
+        "description": "Get the current version of the CMF Tool used by the NIEM API.",
+        "operationId": "cmftoolVersion",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {}
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Get the current version of the CMF Tool used by the NIEM API.",
+        "tags": [
+          "App"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Facet": {
+        "type": "object",
+        "description": "",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "A unique identifier.  For a facet, this is combines the stewardKey, modelKey, versionNumber, qualified type, facet category, and facet value fields.",
+            "example": "niem/model/5.2/nc:AddressCategoryCodeSimpleType/enumeration\u003dresidential"
+          },
+          "@type": {
+            "type": "string",
+            "description": "A kind of NIEM entity, such as a Namespace or a Property.",
+            "example": "Facet"
+          },
+          "category": {
+            "type": "string",
+            "description": "A kind of facet, e.g., \"enumeration\"",
+            "enum": [
+              "enumeration",
+              "pattern",
+              "length",
+              "minLength",
+              "maxLength",
+              "minExclusive",
+              "maxExclusive",
+              "minInclusive",
+              "maxInclusive",
+              "fractionDigits",
+              "totalDigits",
+              "whiteSpace"
+            ]
+          },
+          "definition": {
+            "type": "string"
+          },
+          "isDeprecated": {
+            "type": "boolean",
+            "description": "True if an entity is deprecated; false or null otherwise.",
+            "example": false
+          },
+          "isOriginal": {
+            "type": "boolean",
+            "example": false
+          },
+          "localIdentifier": {
+            "type": "string",
+            "description": "An identifier, unique within its immediate scope.  For a facet, this is the qname of its type followed by facet category and value (unique within its version starting with NIEM 6.0).",
+            "example": "nc:AddressCategoryCodeSimpleType/enumeration\u003dresidential"
+          },
+          "model": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "namespace": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "route": {
+            "type": "string",
+            "description": "An endpoint to get information about a facet.",
+            "example": "https://tools.niem.gov/api/v2/stewards/niem/models/model/versions/5.2/types/nc:AddressCategoryCodeType/enumeration\u003dresidential"
+          },
+          "steward": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "title": {
+            "type": "string",
+            "description": "A steward short name, model short name, version number, qualified type name, and qualified property name.",
+            "example": "NIEM Model 5.2: nc:PersonType contains nc:PersonName"
+          },
+          "value": {
+            "type": "string"
+          },
+          "version": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Model": {
+        "type": "object",
+        "description": "A reference or message data model.",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "A unique identifier.  For a model, this is combines the stewardKey and modelKey fields.",
+            "example": "niem/crash-driver"
+          },
+          "@type": {
+            "type": "string",
+            "description": "A kind of NIEM entity, such as a Namespace or a Property.",
+            "example": "Model"
+          },
+          "category": {
+            "type": "string",
+            "description": "A kind of data model.",
+            "example": "message",
+            "enum": [
+              "reference",
+              "message",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "A description of a model.",
+            "example": "A Crash Driver IEPD used in training to demonstrate NIEM concepts."
+          },
+          "developer": {
+            "type": "string",
+            "description": "A name of an organization or person that developed a model.",
+            "example": "NIEM staff"
+          },
+          "fullName": {
+            "type": "string",
+            "description": "A full name used to identify a model.",
+            "example": "NIEM Training Crash Driver IEPD"
+          },
+          "keywords": {
+            "type": "string",
+            "description": "A common alias, term, or phrase that would help to facilitate search and\n discovery of this IEPD.",
+            "example": "crash, accident, vehicle, injury, charge, driver"
+          },
+          "localIdentifier": {
+            "type": "string",
+            "description": "An identifier, unique within its immediate scope.  For a model, this is the same as the modelKey field (unique within its steward).",
+            "example": "crash-driver"
+          },
+          "modelKey": {
+            "type": "string",
+            "description": "A human-readable and url-friendly model identifier generated from the shortName\n field, unique within the set of models owned by its steward.",
+            "example": "crash-driver"
+          },
+          "objective": {
+            "type": "string",
+            "description": "An intended use for a model, such as for actual implementation or for\n testing tool features or IEPD / message specification features.",
+            "example": "example",
+            "enum": [
+              "implementation",
+              "example",
+              "test",
+              "other"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "description": "A description of the intended usage and reason for which an IEPD exists.",
+            "example": "This IEPD was developed to demonstrate NIEM concepts such as associations, roles, augmentations, metadata, adapters, and external standards."
+          },
+          "repo": {
+            "type": "string",
+            "description": "A code repository which hosts full IEPDs or message specifications representing the model.",
+            "example": "https://github.com/niem/niem-training"
+          },
+          "route": {
+            "type": "string",
+            "description": "An endpoint to get information about a model.",
+            "example": "https://tools.niem.gov/api/v2/stewards/niem/models/crash-driver"
+          },
+          "shortName": {
+            "type": "string",
+            "description": "A short name or acronym used to identify a model.",
+            "example": "Crash Driver"
+          },
+          "steward": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "A steward responsible for the management of the model."
+          },
+          "subjects": {
+            "type": "string",
+            "description": "A description of the environment or NIEM Domain in which this IEPD is\n applicable or used.",
+            "example": "Justice, Transportation, Highway Safety"
+          },
+          "title": {
+            "type": "string",
+            "description": "A steward short name and model short name.",
+            "example": "NIEM Crash Driver"
+          },
+          "website": {
+            "type": "string",
+            "description": "A website address by which a person or organization may be contacted.",
+            "example": "https://niem.github.io/training/"
+          }
+        },
+        "required": [
+          "shortName"
+        ]
+      },
+      "Namespace": {
+        "type": "object",
+        "description": "A collection of properties and types managed by an authoritative source.",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "A unique identifier.  For a namespace, this is combines the stewardKey, modelKey, versionNumber, and prefix fields.",
+            "example": "niem/crash-driver/1.1/nc"
+          },
+          "@type": {
+            "type": "string",
+            "description": "A kind of NIEM entity, such as a Namespace or a Property.",
+            "example": "Namespace"
+          },
+          "category": {
+            "type": "string",
+            "description": "A kind of namespace.",
+            "example": "core",
+            "enum": [
+              "core",
+              "domain",
+              "code",
+              "adapter",
+              "auxiliary",
+              "external",
+              "utility",
+              "core_supplement",
+              "domain_update",
+              "extension",
+              "exchange",
+              "built_in",
+              "other"
+            ]
+          },
+          "conformanceTarget": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string",
+            "description": "A definition that describes a namespace.",
+            "example": "NIEM Core."
+          },
+          "draft": {
+            "type": "string",
+            "description": "A draft version of a namespace. NIEM conventions are to use the value \"1\"\n for a namespace that has reached release candidate status or has been\n published.",
+            "example": "alpha2"
+          },
+          "filename": {
+            "type": "string",
+            "description": "The filename to use for representations of this namespace such as XML schemas,\n without a file extension.",
+            "example": "niem-core"
+          },
+          "filepath": {
+            "type": "string",
+            "description": "The filepath to use for nested representations of this namespace such as\n for XML schemas, without the filename or extension.",
+            "example": "xsd/"
+          },
+          "generation": {
+            "type": "string",
+            "description": "A means by which a namespace should be generated.\n \u003cul\u003e\n \u003cli\u003ebuild: Generate by assembling its properties and types\u003c/li\u003e\n \u003cli\u003estatic_file: Include it\u0027s pre-built file (e.g., externals and\n utilities)\u003c/li\u003e\n \u003cli\u003enone: Namespace may be referenced but does not need to be included (e.g.,\n XML Schema)\u003c/li\u003e\n \u003c/ul\u003e\n Defaults to \"build\".",
+            "example": "REF",
+            "enum": [
+              "build",
+              "static_file",
+              "none"
+            ]
+          },
+          "hasTarget": {
+            "type": "boolean",
+            "example": true
+          },
+          "isDeprecated": {
+            "type": "boolean",
+            "description": "True if an entity is deprecated; false or null otherwise.",
+            "example": false
+          },
+          "isOriginal": {
+            "type": "boolean",
+            "example": false
+          },
+          "localIdentifier": {
+            "type": "string",
+            "description": "An identifier, unique within its immediate scope.  For a namespace, this is the same as the prefix field (unique within its version).",
+            "example": "nc"
+          },
+          "model": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string",
+            "description": "A name of a namespace.",
+            "example": "NIEM Core"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "A short, non-normative identifier for a namespace.",
+            "example": "nc"
+          },
+          "route": {
+            "type": "string",
+            "description": "An endpoint to get information about a namespace.",
+            "example": "https://tools.niem.gov/api/v2/stewards/niem/models/crash-driver/version/1.1/namespaces/nc"
+          },
+          "steward": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "target": {
+            "type": "string",
+            "description": "A code representing an NDR conformance target, or null if the namespace\n is not meant to be conformant.",
+            "example": "EXT",
+            "enum": [
+              "REF",
+              "EXT"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "description": "A steward short name, model short name, version number, and namespace name (if provided) or prefix.",
+            "example": "NIEM Crash Driver 1.1: NIEM Core"
+          },
+          "uri": {
+            "type": "string",
+            "description": "A normative identifier for a namespace.",
+            "example": "http://release.niem.gov/niem/niem-core/5.0"
+          },
+          "version": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Model version in which this entity is defined."
+          }
+        }
+      },
+      "Property": {
+        "type": "object",
+        "description": "A property represents a concept, idea, or thing.",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "A unique identifier.  For a property, this is combines the stewardKey, modelKey, versionNumber, prefix, and name fields.",
+            "example": "niem/crash-driver/1.1/nc:PersonGivenName"
+          },
+          "@type": {
+            "type": "string",
+            "description": "A kind of NIEM entity, such as a Namespace or a Property.",
+            "example": "Property"
+          },
+          "alias": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "description": "A kind of property",
+            "enum": [
+              "element",
+              "abstract_element",
+              "attribute"
+            ]
+          },
+          "definition": {
+            "type": "string",
+            "description": "A definition describing a property or type.",
+            "example": "A first name of a person."
+          },
+          "exampleContent": {
+            "type": "string"
+          },
+          "group": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "A substitution group head, which may be replaced in message instances by this property."
+          },
+          "isAbstract": {
+            "type": "boolean"
+          },
+          "isAttribute": {
+            "type": "boolean"
+          },
+          "isDeprecated": {
+            "type": "boolean",
+            "description": "True if an entity is deprecated; false or null otherwise.",
+            "example": false
+          },
+          "isElement": {
+            "type": "boolean"
+          },
+          "isOriginal": {
+            "type": "boolean",
+            "example": false
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "localIdentifier": {
+            "type": "string",
+            "description": "An identifier, unique within its immediate scope.  For a property, this is the same as the qname field (unique within its version).",
+            "example": "nc:PersonGivenName"
+          },
+          "model": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string",
+            "description": "A name of the property or type.",
+            "example": "PersonGivenName"
+          },
+          "namespace": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Namespace that defines this component."
+          },
+          "prefix": {
+            "type": "string",
+            "description": "A namespace prefix for the property or type.",
+            "example": "nc"
+          },
+          "qname": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string",
+            "description": "An endpoint to get information about a property.",
+            "example": "https://tools.niem.gov/api/v2/stewards/niem/models/crash-driver/version/1.1/properties/nc:PersonGivenName"
+          },
+          "steward": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "terms": {
+            "type": "array",
+            "example": "[\u0027Person\u0027, \u0027Given\u0027, \u0027Name\u0027]",
+            "items": {
+              "type": "string",
+              "example": "[\u0027Person\u0027, \u0027Given\u0027, \u0027Name\u0027]"
+            }
+          },
+          "title": {
+            "type": "string",
+            "description": "A steward short name, model short name, version number, and qualified property name.",
+            "example": "NIEM Crash Driver 1.1: nc:PersonGivenName"
+          },
+          "type": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "A type that describes the structure and value set of the property."
+          },
+          "usageInfo": {
+            "type": "string"
+          },
+          "version": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Steward": {
+        "type": "object",
+        "description": "A program, group, or other entity responsible for managing NIEM content.",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "A unique identifier.  For a steward, this is the the same as the stewardKey field.",
+            "example": "niem"
+          },
+          "@type": {
+            "type": "string",
+            "description": "A kind of NIEM entity, such as a Namespace or a Property.",
+            "example": "Steward"
+          },
+          "address": {
+            "type": "string",
+            "description": "A complete address.",
+            "example": "Hampton Roads, Virginia"
+          },
+          "category": {
+            "type": "string",
+            "description": "A kind of steward.",
+            "enum": [
+              "Federal",
+              "State",
+              "Local",
+              "Tribal",
+              "Territorial",
+              "International",
+              "Industry",
+              "Nonprofit",
+              "SDO",
+              "Educational",
+              "Person",
+              "Other"
+            ]
+          },
+          "contactName": {
+            "type": "string",
+            "description": "A name of the person to be contacted.",
+            "example": "George P. Burdell"
+          },
+          "country": {
+            "type": "string",
+            "description": "A country, territory, dependency, or other such geopolitical subdivision of a\n location.",
+            "enum": [
+              "USA",
+              "ABW",
+              "AFG",
+              "AGO",
+              "AIA",
+              "ALB",
+              "AND",
+              "ARE",
+              "ARG",
+              "ARM",
+              "ASM",
+              "ATA",
+              "ATF",
+              "ATG",
+              "AUS",
+              "AUT",
+              "AX1",
+              "AX2",
+              "AX3",
+              "AZE",
+              "BDI",
+              "BEL",
+              "BEN",
+              "BES",
+              "BFA",
+              "BGD",
+              "BGR",
+              "BHR",
+              "BHS",
+              "BIH",
+              "BLM",
+              "BLR",
+              "BLZ",
+              "BMU",
+              "BOL",
+              "BRA",
+              "BRB",
+              "BRN",
+              "BTN",
+              "BVT",
+              "BWA",
+              "CAF",
+              "CAN",
+              "CCK",
+              "CHE",
+              "CHL",
+              "CHN",
+              "CIV",
+              "CMR",
+              "COD",
+              "COG",
+              "COK",
+              "COL",
+              "COM",
+              "CPT",
+              "CPV",
+              "CRI",
+              "CUB",
+              "CUW",
+              "CXR",
+              "CYM",
+              "CYP",
+              "CZE",
+              "DEU",
+              "DGA",
+              "DJI",
+              "DMA",
+              "DNK",
+              "DOM",
+              "DZA",
+              "ECU",
+              "EGY",
+              "ERI",
+              "ESH",
+              "ESP",
+              "EST",
+              "ETH",
+              "FIN",
+              "FJI",
+              "FLK",
+              "FRA",
+              "FRO",
+              "FSM",
+              "GAB",
+              "GBR",
+              "GEO",
+              "GGY",
+              "GHA",
+              "GIB",
+              "GIN",
+              "GLP",
+              "GMB",
+              "GNB",
+              "GNQ",
+              "GRC",
+              "GRD",
+              "GRL",
+              "GTM",
+              "GUF",
+              "GUM",
+              "GUY",
+              "HKG",
+              "HMD",
+              "HND",
+              "HRV",
+              "HTI",
+              "HUN",
+              "IDN",
+              "IMN",
+              "IND",
+              "IOT",
+              "IRL",
+              "IRN",
+              "IRQ",
+              "ISL",
+              "ISR",
+              "ITA",
+              "JAM",
+              "JEY",
+              "JOR",
+              "JPN",
+              "KAZ",
+              "KEN",
+              "KGZ",
+              "KHM",
+              "KIR",
+              "KNA",
+              "KOR",
+              "KWT",
+              "LAO",
+              "LBN",
+              "LBR",
+              "LBY",
+              "LCA",
+              "LIE",
+              "LKA",
+              "LSO",
+              "LTU",
+              "LUX",
+              "LVA",
+              "MAC",
+              "MAF",
+              "MAR",
+              "MCO",
+              "MDA",
+              "MDG",
+              "MDV",
+              "MEX",
+              "MHL",
+              "MKD",
+              "MLI",
+              "MLT",
+              "MMR",
+              "MNE",
+              "MNG",
+              "MNP",
+              "MOZ",
+              "MRT",
+              "MSR",
+              "MTQ",
+              "MUS",
+              "MWI",
+              "MYS",
+              "MYT",
+              "NAM",
+              "NCL",
+              "NER",
+              "NFK",
+              "NGA",
+              "NIC",
+              "NIU",
+              "NLD",
+              "NOR",
+              "NPL",
+              "NRU",
+              "NZL",
+              "OMN",
+              "PAK",
+              "PAN",
+              "PCN",
+              "PER",
+              "PHL",
+              "PLW",
+              "PNG",
+              "POL",
+              "PRI",
+              "PRK",
+              "PRT",
+              "PRY",
+              "PYF",
+              "QAT",
+              "REU",
+              "ROU",
+              "RUS",
+              "RWA",
+              "SAU",
+              "SDN",
+              "SEN",
+              "SGP",
+              "SGS",
+              "SHN",
+              "SLB",
+              "SLE",
+              "SLV",
+              "SMR",
+              "SOM",
+              "SPM",
+              "SRB",
+              "SSD",
+              "STP",
+              "SUR",
+              "SVK",
+              "SVN",
+              "SWE",
+              "SWZ",
+              "SXM",
+              "SYC",
+              "SYR",
+              "TCA",
+              "TCD",
+              "TGO",
+              "THA",
+              "TJK",
+              "TKL",
+              "TKM",
+              "TLS",
+              "TON",
+              "TTO",
+              "TUN",
+              "TUR",
+              "TUV",
+              "TWN",
+              "TZA",
+              "UGA",
+              "UKR",
+              "URY",
+              "UZB",
+              "VAT",
+              "VCT",
+              "VEN",
+              "VGB",
+              "VIR",
+              "VNM",
+              "VUT",
+              "WLF",
+              "WSM",
+              "XAC",
+              "XAZ",
+              "XBI",
+              "XBK",
+              "XCR",
+              "XCS",
+              "XCY",
+              "XEU",
+              "XGL",
+              "XGZ",
+              "XHO",
+              "XJA",
+              "XJM",
+              "XJN",
+              "XJV",
+              "XKM",
+              "XKN",
+              "XKR",
+              "XKS",
+              "XMW",
+              "XNV",
+              "XPL",
+              "XPR",
+              "XQZ",
+              "XSP",
+              "XSV",
+              "XTR",
+              "XWB",
+              "XWK",
+              "XXD",
+              "YEM",
+              "ZAF",
+              "ZMB",
+              "ZWE"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "A description of an organization.",
+            "example": "A community-driven, standards-based approach to defining information exchange packages for multiple business domains."
+          },
+          "email": {
+            "type": "string",
+            "description": "An electronic mailing address by which a person or organization may be\n contacted.",
+            "example": "information@niem.gov"
+          },
+          "fullName": {
+            "type": "string",
+            "description": "A name of an organization.",
+            "example": "NIEM Management Office"
+          },
+          "localIdentifier": {
+            "type": "string",
+            "description": "An identifier, unique within its immediate scope.  For a steward, this is the same as the stewardKey field.",
+            "example": "niem"
+          },
+          "phone": {
+            "type": "string",
+            "description": "A complete telephone number.",
+            "example": "555-867-5309"
+          },
+          "route": {
+            "type": "string",
+            "description": "An endpoint to get information about a steward.",
+            "example": "https://tools.niem.gov/api/v2/stewards/niem"
+          },
+          "shortName": {
+            "type": "string",
+            "description": "A short name or acronym used to identify a steward.  This could be the name of an\n organization or unit, a program name, or other kind of authoritative source.",
+            "example": "NIEM"
+          },
+          "stewardKey": {
+            "type": "string",
+            "description": "A human-readable and url-friendly steward identifier generated from the shortName field.",
+            "example": "niem"
+          },
+          "subunit": {
+            "type": "string",
+            "description": "A name of a subdivision of an organization.",
+            "example": "Data and Standards Division"
+          },
+          "title": {
+            "type": "string",
+            "description": "A description used to identify an entity.",
+            "example": "NIEM"
+          },
+          "unit": {
+            "type": "string",
+            "description": "A name of a high-level division of an organization.",
+            "example": "Joint Staff J6"
+          },
+          "website": {
+            "type": "string",
+            "description": "A website address by which a person or organization may be contacted.",
+            "example": "https://niem.gov"
+          }
+        },
+        "required": [
+          "shortName"
+        ]
+      },
+      "Subproperty": {
+        "type": "object",
+        "description": "A subproperty is a property that is contained by a type, along with cardinality constraints.",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "A unique identifier.  For a subproperty, this is combines the stewardKey, modelKey, versionNumber, qualified container type, and qualified property fields.",
+            "example": "niem/model/5.2/nc:PersonType/nc:PersonName"
+          },
+          "@type": {
+            "type": "string",
+            "description": "A kind of NIEM entity, such as a Namespace or a Property.",
+            "example": "Subproperty"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "isDeprecated": {
+            "type": "boolean",
+            "description": "True if an entity is deprecated; false or null otherwise.",
+            "example": false
+          },
+          "isOriginal": {
+            "type": "boolean",
+            "example": false
+          },
+          "localIdentifier": {
+            "type": "string",
+            "description": "An identifier, unique within its immediate scope.  For a subproperty, this is the qname of type container type followed by the the qname of the contained property (unique within its version).",
+            "example": "nc:PersonType/nc:PersonName"
+          },
+          "max": {
+            "pattern": "^unbounded|([1-9]\\d+)$",
+            "type": "string",
+            "description": "\u0027unbounded\u0027 or 1-9 with zero or more additional digits"
+          },
+          "min": {
+            "pattern": "^0|([1-9]\\d+)$",
+            "type": "string",
+            "description": "0 or 1-9 with zero or more additional digits"
+          },
+          "model": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "namespace": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "property": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "route": {
+            "type": "string",
+            "description": "An endpoint to get information about a subproperty.",
+            "example": "https://tools.niem.gov/api/v2/stewards/niem/models/model/versions/5.2/types/nc:PersonType/subproperties/nc:PersonName"
+          },
+          "sequence": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "steward": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "title": {
+            "type": "string",
+            "description": "A steward short name, model short name, version number, qualified type name, and qualified property name.",
+            "example": "NIEM Model 5.2: nc:PersonType contains nc:PersonName"
+          },
+          "type": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Type": {
+        "type": "object",
+        "description": "",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "A unique identifier.  For a type, this is combines the stewardKey, modelKey, versionNumber, prefix, and name fields.",
+            "example": "niem/crash-driver/1.1/nc:PersonType"
+          },
+          "@type": {
+            "type": "string",
+            "description": "A kind of NIEM entity, such as a Namespace or a Property.",
+            "example": "Type"
+          },
+          "base": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "complex_object",
+              "complex_value",
+              "simple_value"
+            ]
+          },
+          "definition": {
+            "type": "string",
+            "description": "A definition describing a property or type.",
+            "example": "A first name of a person."
+          },
+          "derivation": {
+            "type": "string",
+            "enum": [
+              "extension",
+              "restriction"
+            ]
+          },
+          "isComplex": {
+            "type": "boolean"
+          },
+          "isComplexContent": {
+            "type": "boolean"
+          },
+          "isDeprecated": {
+            "type": "boolean",
+            "description": "True if an entity is deprecated; false or null otherwise.",
+            "example": false
+          },
+          "isOriginal": {
+            "type": "boolean",
+            "example": false
+          },
+          "isSimple": {
+            "type": "boolean"
+          },
+          "isSimpleContent": {
+            "type": "boolean"
+          },
+          "localIdentifier": {
+            "type": "string",
+            "description": "An identifier, unique within its immediate scope.  For a type, this is the same as the qname field (unique within its version).",
+            "example": "nc:PersonType"
+          },
+          "model": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string",
+            "description": "A name of the property or type.",
+            "example": "PersonGivenName"
+          },
+          "namespace": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Namespace that defines this component."
+          },
+          "pattern": {
+            "type": "string",
+            "enum": [
+              "object",
+              "adapter",
+              "association",
+              "augmentation",
+              "metadata",
+              "complex_value",
+              "simple_value",
+              "simple_list",
+              "simple_union"
+            ]
+          },
+          "prefix": {
+            "type": "string",
+            "description": "A namespace prefix for the property or type.",
+            "example": "nc"
+          },
+          "qname": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string",
+            "description": "An endpoint to get information about a type.",
+            "example": "https://tools.niem.gov/api/v2/stewards/niem/models/crash-driver/version/1.1/types/nc:PersonType"
+          },
+          "steward": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "terms": {
+            "type": "array",
+            "example": "[\u0027Person\u0027, \u0027Given\u0027, \u0027Name\u0027]",
+            "items": {
+              "type": "string",
+              "example": "[\u0027Person\u0027, \u0027Given\u0027, \u0027Name\u0027]"
+            }
+          },
+          "title": {
+            "type": "string",
+            "description": "A steward short name, model short name, version number, and qualified type name.",
+            "example": "NIEM Crash Driver 1.1: nc:PersonType"
+          },
+          "version": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Version": {
+        "type": "object",
+        "description": "A specific version or release of a model.",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "A unique identifier.  For a version, this is combines the stewardKey, modelKey, and versionNumber fields.",
+            "example": "niem/crash-driver/1.1"
+          },
+          "@type": {
+            "type": "string",
+            "description": "A kind of NIEM entity, such as a Namespace or a Property.",
+            "example": "Version"
+          },
+          "category": {
+            "type": "string",
+            "description": "A kind of version, such as major or minor.",
+            "example": "major",
+            "enum": [
+              "major",
+              "minor",
+              "patch",
+              "core_supplement",
+              "domain_update",
+              "other"
+            ]
+          },
+          "conformanceTargets": {
+            "type": "string",
+            "description": "A list of one or more URIs that each represents an IEPD class to which the\n IEPD claims conformance.",
+            "example": "http://reference.niem.gov/niem/specification/model-package-description/5.0/#IEPD"
+          },
+          "draft": {
+            "type": "string",
+            "description": "A draft of a version, such as \"alpha1\" or \"rc2\".",
+            "example": "alpha1"
+          },
+          "exchangePartners": {
+            "type": "string",
+            "description": "A name of an entity or organization that uses this IEPD.",
+            "example": "Department of Transportation, State of Virginia"
+          },
+          "exchangePattern": {
+            "type": "string",
+            "description": "A description of a transactional or design pattern used for this IEPD.",
+            "example": "query/response"
+          },
+          "isCurrent": {
+            "type": "boolean",
+            "description": "True if this version of the model is considered the current version; false otherwise.",
+            "example": false
+          },
+          "isPublished": {
+            "type": "boolean",
+            "description": "True if a version has been published and the content is to be considered\n finalized; false otherwise.",
+            "example": false
+          },
+          "localIdentifier": {
+            "type": "string",
+            "description": "An identifier, unique within its immediate scope.  For a version, this is the same as the versionNumber field (unique within its model).",
+            "example": "1.1"
+          },
+          "model": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "niemVersionNumber": {
+            "type": "string"
+          },
+          "revised": {
+            "type": "string",
+            "description": "A date the latest changes to an IEPD were published (i.e., CreationDate of\n previous version).",
+            "example": "2020-08-01"
+          },
+          "route": {
+            "type": "string",
+            "description": "An endpoint to get information about a version.",
+            "example": "https://tools.niem.gov/api/v2/stewards/niem/models/crash-driver/version/1.1"
+          },
+          "status": {
+            "type": "string",
+            "description": "A description of the current state of this IEPD in development; may also\n project future plans for the IEPD.",
+            "example": "Finalized for NIEM 5.0-series training; due to be updated after the publication of NIEM 6.0."
+          },
+          "steward": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "title": {
+            "type": "string",
+            "description": "A steward short name, model short name, and version number.",
+            "example": "NIEM Crash Driver 1.1"
+          },
+          "uri": {
+            "type": "string",
+            "description": "An URI identifier for a version of a model.",
+            "example": "http://example.com/CrashDriver/1.1/"
+          },
+          "versionNumber": {
+            "type": "string",
+            "description": "A number which identifies a version of a model, such as \"5.2\" or \"1.0.1\".",
+            "example": "1.1"
+          }
+        }
+      }
+    }
+  }
+}

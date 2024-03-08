@@ -18,6 +18,11 @@ import lombok.RequiredArgsConstructor;
 @Builder
 public class Results {
 
+  public enum ResultsFormat {
+    json,
+    csv;
+  }
+
   @Builder.Default
   public List<Test> tests = new LinkedList<Test>();
 
